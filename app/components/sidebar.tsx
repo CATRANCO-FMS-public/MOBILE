@@ -12,6 +12,7 @@ import { Link } from "expo-router";
 import { useRouter } from "expo-router";
 import { logout } from "@/services/authentication/authServices";
 import { viewProfile } from "@/services/profile/profileServices";
+import renderImage from "@/constants/renderImage/renderImage";
 
 const Sidebar = ({ isVisible, onClose }) => {
 
@@ -22,8 +23,8 @@ const Sidebar = ({ isVisible, onClose }) => {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const data = await viewProfile(); // Call viewProfile function
-        setProfile(data); // Store the profile data in the state
+        const profileData = await viewProfile(); // Call viewProfile function
+        setProfile(profileData); // Store the profile data in the state
       } catch (error) {
         console.error("Error fetching profile:", error);
       }
@@ -58,7 +59,7 @@ const Sidebar = ({ isVisible, onClose }) => {
             {/* Display Profile Image or Frame if Image is not available */}
             {profile?.profile?.user_profile_image ? (
               <Image
-                source={{ uri: profile.profile.user_profile_image }}
+                source={{ uri: `${renderImage}/${profile.profile.user_profile_image}` }}
                 style={styles.profileImage}
               />
             ) : (

@@ -32,8 +32,6 @@ export const AuthProvider = ({ children }) => {
 
       // Check if response contains a valid token and role
       if (response?.token && response?.user?.role?.role_id === 2) {
-        // Save token to storage
-        await AsyncStorage.setItem("authToken", response.token);
 
         // Set user state with the response user object
         setUser(response.user);
@@ -52,7 +50,6 @@ export const AuthProvider = ({ children }) => {
   const signOut = async () => {
     try {
       await logout(); // Clear server session
-      await AsyncStorage.removeItem("authToken"); // Remove token from storage
       setUser(null);
     } catch (error) {
       console.error("Sign out error:", error);

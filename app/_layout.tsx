@@ -1,8 +1,10 @@
 import React from "react";
+import { LogBox } from "react-native";
 import { Stack } from "expo-router";
 import { AuthProvider } from "@/services/authentication/authContext";
 
 export default function RootLayout() {
+  LogBox.ignoreAllLogs();
   console.log("RootLayout Loaded with");
   return (
     <AuthProvider>
