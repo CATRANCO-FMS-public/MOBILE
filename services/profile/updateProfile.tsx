@@ -1,22 +1,5 @@
-import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import apiURL from '../../constants/apiURL/apiURL';
+import api from '@/constants/axiosInstance/axiosInstanceFORM';
 import * as ImagePicker from 'expo-image-picker';
-
-const api = axios.create({
-    baseURL: `${apiURL}/api`,
-    headers: {
-        'Content-Type': 'multipart/form-data',
-    },
-});
-
-api.interceptors.request.use(async config => {
-    const token = await AsyncStorage.getItem('authToken');
-    if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-});
 
 // Function to update the user's profile image
 export const updateProfileImage = async (imageUri) => {

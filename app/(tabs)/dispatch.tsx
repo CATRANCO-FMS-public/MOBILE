@@ -9,39 +9,14 @@ import {
   Modal,
   TouchableWithoutFeedback,
 } from "react-native";
-import Constants from 'expo-constants';
+import { useRouter } from "expo-router";
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE  } from "react-native-maps";
 import Icon from "react-native-vector-icons/Ionicons";
 import Sidebar from "../components/sidebar";
 import DispatchModal from "../components/DispatchModal";
 import AlleyModal from "../components/AlleyModal";
-import echo from "../../services/utils/pusherConfig"; 
-import { useFocusEffect } from "@react-navigation/native";
-
-const allBusData = [
-  [
-    { id: "1", bus: "BUS 001", status: "Cogon Alley", color: "#D3D3D3" },
-    { id: "2", bus: "BUS 002", status: "On road To Cogon", color: "#ADFF2F" },
-    {
-      id: "3",
-      bus: "BUS 003",
-      status: "On road To SilverCreek",
-      color: "#ADFF2F",
-    },
-    { id: "4", bus: "BUS 004", status: "Silver Alley", color: "#D3D3D3" },
-  ],
-  [
-    { id: "6", bus: "BUS 006", status: "Cogon Alley", color: "#D3D3D3" },
-    { id: "7", bus: "BUS 007", status: "On road To Cogon", color: "#ADFF2F" },
-    {
-      id: "8",
-      bus: "BUS 008",
-      status: "On road To SilverCreek",
-      color: "#ADFF2F",
-    },
-    { id: "9", bus: "BUS 009", status: "Silver Alley", color: "#D3D3D3" },
-  ],
-];
+import echo from "../../constants/utils/pusherConfig"; 
+import BusList from "../components/Buslist";
 
 const App = () => {
   const [sidebarVisible, setSidebarVisible] = useState(false);
@@ -49,7 +24,7 @@ const App = () => {
   const [currentDate, setCurrentDate] = useState("");
   const [dispatchModalVisible, setDispatchModalVisible] = useState(false);
   const [alleyModalVisible, setAlleyModalVisible] = useState(false);
-  const [selectedBus, setSelectedBus] = useState(null);
+  const [selectedBus, setSelectedBus] = useState<{ vehicle_id: string; status: string } | null>(null);
   const [timer, setTimer] = useState(600); // 10 minutes default (in seconds)
   const [isRunning, setIsRunning] = useState(false);
   const [isHidden, setIsHidden] = useState(false); // To toggle visibility of components
@@ -57,58 +32,63 @@ const App = () => {
   const [trackerData, setTrackerData] = useState<any>(null);
   const [path, setPath] = useState<{ latitude: number; longitude: number }[]>([]);
   const [renderMap, setRenderMap] = useState(false);
-
-  // Function to setup real-time listener
-  const setupRealTimeListener = () => {
-    const channel = echo.channel("flespi-data");
-
-    const handleEvent = (event: any) => {
-      console.log("Real-time Data Received:", event.data);
-
-      if (Array.isArray(event.data) && event.data.length > 0) {
-        const newTrackerData = event.data[0]; // Get the first item from the array
-
-        // Apply logic similar to mock data:
-        // Check if PositionLatitude and PositionLongitude are present
-        if (newTrackerData.PositionLatitude && newTrackerData.PositionLongitude) {
-          // Update path with new coordinates
-          setPath((prevPath) => [
-            ...prevPath,
-            {
-              latitude: newTrackerData.PositionLatitude,
-              longitude: newTrackerData.PositionLongitude,
-            },
-          ]);
-
-          // Update trackerData with the first object
-          setTrackerData(newTrackerData);
-        } else {
-          setTrackerData(null); // Clear tracker data if no valid data is received
-        }
-      } else {
-        setTrackerData(null); // Clear tracker data if event.data is empty
-      }
-    };
-
-    // Listen for the "FlespiDataReceived" event
-    channel.listen("FlespiDataReceived", handleEvent);
-
-    // Return cleanup function to stop the listener and disconnect
-    return () => {
-      channel.stopListening("FlespiDataReceived");
-      echo.disconnect();
-    };
-  };
+  const router = useRouter();
 
   // Using useEffect to setup the real-time listener
   useEffect(() => {
-    const cleanup = setupRealTimeListener(); // Call the listener setup function
+    // Function to setup real-time listener
+    const setupRealTimeListener = () => {
+      const channel = echo.channel("flespi-data");
 
-    // Cleanup the listener when the component is unmounted
-    return cleanup;
-  }, []); // Empty dependency array ensures this effect runs once on mount
+      const handleEvent = (event: any) => {
+        console.log("Real-time Data Received:", event.data);
 
+        if (Array.isArray(event.data) && event.data.length > 0) {
+          const newTrackerData = event.data[0]; // Get the first item from the array
 
+          // Apply logic similar to mock data:
+          // Check if PositionLatitude and PositionLongitude are present
+          if (newTrackerData.PositionLatitude && newTrackerData.PositionLongitude) {
+            // Update path with new coordinates
+            setPath((prevPath) => [
+              ...prevPath,
+              {
+                latitude: newTrackerData.PositionLatitude,
+                longitude: newTrackerData.PositionLongitude,
+              },
+            ]);
+
+            // Update trackerData with the first object
+            setTrackerData(newTrackerData);
+          } else {
+            setTrackerData(null); // Clear tracker data if no valid data is received
+          }
+        } else {
+          setTrackerData(null); // Clear tracker data if event.data is empty
+        }
+      };
+
+      // Listen for the "FlespiDataReceived" event
+      channel.listen("FlespiDataReceived", handleEvent);
+
+      // Return cleanup function to stop the listener and disconnect
+      return () => {
+        channel.stopListening("FlespiDataReceived");
+        echo.disconnect();
+      };
+    }; 
+
+    // Call setupRealTimeListener every 1 second
+    const intervalId = setInterval(setupRealTimeListener, 1000);
+
+    // Fetch immediately on mount
+    setupRealTimeListener();
+
+    // Clean up the interval on component unmount
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, []); 
   // Delay rendering the map by 3 seconds
   useEffect(() => {
     const timeout = setTimeout(() => setRenderMap(true), 10000); // Adjust delay as needed
@@ -167,8 +147,8 @@ const App = () => {
           provider={PROVIDER_GOOGLE}
           style={styles.map}
           region={{
-            latitude: trackerData?.PositionLatitude,
-            longitude: trackerData?.PositionLongitude,
+            latitude: trackerData?.PositionLatitude || 0,
+            longitude: trackerData?.PositionLongitude || 0,
             latitudeDelta: 0.005,
             longitudeDelta: 0.005,
           }}
@@ -224,6 +204,9 @@ const App = () => {
               <Icon name="menu" size={25} color="black" />
             </TouchableOpacity>
             <Text style={styles.date}>{currentDate}</Text>
+            <TouchableOpacity style={styles.histogramIcon} onPress={() => {router.push("/(tabs)/history")}}>
+              <Icon name="bar-chart-outline" size={25} color="black" />
+            </TouchableOpacity>
           </>
         )}
         <TouchableOpacity onPress={toggleVisibility} style={styles.eyeIcon}>
@@ -238,39 +221,13 @@ const App = () => {
       {!isHidden && (
         <>
           {/* Swipeable Bus Status */}
-          <FlatList
-            data={allBusData}
-            keyExtractor={(item, index) => index.toString()}
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            showsVerticalScrollIndicator={false}
-            renderItem={({ item }) => (
-              <View style={styles.busPage}>
-                <FlatList
-                  data={item}
-                  keyExtractor={(bus) => bus.id}
-                  numColumns={2}
-                  renderItem={({ item }) => (
-                    <TouchableOpacity
-                      style={[
-                        styles.busCard,
-                        { backgroundColor: item.color },
-                        selectedBus?.bus === item.bus && styles.selectedBusCard,
-                      ]}
-                      onPress={() => setSelectedBus({ bus: item.bus, status: item.status })}
-                    >
-                      <Icon name="bus" size={20} color="black" />
-                      <View style={{ flex: 1, flexDirection: "column" }}>
-                        <Text style={styles.busText}>{item.bus}</Text>
-                        <Text style={styles.statusText}>{item.status}</Text>
-                      </View>
-                    </TouchableOpacity>
-                  )}
-                />
-              </View>
-            )}
-          />
+          <View style={styles.busContainer}>
+            <BusList
+              selectedBus={selectedBus}
+              setSelectedBus={setSelectedBus}
+            />
+          </View>
+          
 
           {/* Timer */}
           <View style={styles.timerContainer}>
@@ -297,28 +254,32 @@ const App = () => {
           {/* Bottom Buttons */}
           <View style={styles.bottomButtons}>
             <TouchableOpacity
+                style={[styles.button, styles.onAlleyButton]}
+                onPress={() => {
+                  if (selectedBus) {
+                    setAlleyModalVisible(true); // Open DispatchModal only if a bus is selected
+                  } else {
+                    alert("Please select a bus first!");
+                  }
+                }}
+              >
+                <Text style={styles.buttonText}>Alley On</Text>
+              </TouchableOpacity>
+            <TouchableOpacity
               style={[styles.button, styles.dispatchButton]}
-              onPress={() => setDispatchModalVisible(true)}
+              onPress={() => {
+                if (selectedBus) {
+                  setDispatchModalVisible(true); // Open DispatchModal only if a bus is selected
+                } else {
+                  alert("Please select a bus first!");
+                }
+              }}
             >
               <Text style={styles.buttonText}>Dispatch</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.button, styles.onAlleyButton]}
-              onPress={() => setAlleyModalVisible(true)}
-            >
-              <Text style={styles.buttonText}>On Alley</Text>
             </TouchableOpacity>
           </View>
         </>
       )}
-
-      {/* Dispatch Modal */}
-      <DispatchModal
-        isVisible={dispatchModalVisible}
-        onClose={() => setDispatchModalVisible(false)}
-        selectedBus={selectedBus}
-        onConfirm={resetTimer}
-      />
 
       {/* Alley Modal */}
       <AlleyModal
@@ -326,6 +287,14 @@ const App = () => {
         onClose={() => setAlleyModalVisible(false)}
         selectedBus={selectedBus}
         onConfirm={resetTimer}
+      />
+
+      {/* Dispatch Modal */}
+      <DispatchModal
+        isVisible={dispatchModalVisible}
+        onClose={() => setDispatchModalVisible(false)}
+        selectedBus={selectedBus}
+        onConfirm={() => resetTimer()}
       />
 
       {/* Settings Modal */}
@@ -375,10 +344,13 @@ const styles = StyleSheet.create({
     textAlign: "center",
     flex: 1, 
   },
+  histogramIcon:{
+    right: 40,
+  },
   eyeIcon: {
     position: "absolute",
     right: 10, 
-    top: 10, 
+    top: 10,
   },
   map: {
     flex: 1,
@@ -410,34 +382,11 @@ const styles = StyleSheet.create({
     color: "#666",
   },
   freeSpace: {
-    height: 390,
+    height: 415,
   },
-  busPage: {
-    width: Dimensions.get("window").width - 20,
-    height: 245
-  },
-  busCard: {
-    flex: 1,
-    margin: 10,
-    padding: 20,
-    borderRadius: 10,
-    flexDirection: "row",
+  busContainer: {
     alignItems: "center",
-  },
-  selectedBusCard: {
-    borderWidth: 2,
-    borderColor: "orange",
-  },
-  busText: {
-    fontSize: 16,
-    marginLeft: 10,
-    fontWeight: "700",
-  },
-  statusText: {
-    marginLeft: 10,
-    fontSize: 12,
-    fontStyle: "italic",
-    color: "#666",
+    height: 200,
   },
   timerContainer: {
     alignItems: "center",
@@ -499,7 +448,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#32CD32",
   },
   onAlleyButton: {
-    backgroundColor: "#FF6347",
+    backgroundColor: "orange",
   },
   buttonText: {
     fontSize: 16,

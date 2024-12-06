@@ -16,7 +16,6 @@ import { getUser, updateAccount } from "@/services/authentication/authServices";
 import { viewProfile } from "@/services/profile/profileServices";
 import { updateProfileImage, openImagePicker } from "@/services/profile/updateProfile";
 import renderImage from "@/constants/renderImage/renderImage";
-import FastImage from 'react-native-fast-image';
 
 const accountSettings = () => {
   // State for managing profile data

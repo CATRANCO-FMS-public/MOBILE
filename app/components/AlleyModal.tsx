@@ -1,11 +1,12 @@
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity, Modal, StyleSheet } from "react-native";
+import { View, Text, TouchableOpacity, Modal, StyleSheet, Alert } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
+import { startAlley } from "@/services/dispatch/dispatchServices";
 
 interface AlleyModalProps {
   isVisible: boolean;
   onClose: () => void;
-  selectedBus: { bus: string; status: string } | null;
+  selectedBus: { vehicle_id: string; status: string; vehicle_assignment_id: number } | null;
   onConfirm: () => void; // Prop for resetting the timer
 }
 
@@ -19,6 +20,35 @@ const AlleyModal: React.FC<AlleyModalProps> = ({
 
   const handleOptionSelect = (option: string) => {
     setSelectedOption(option);
+  };
+
+  const handleConfirm = async () => {
+    if (!selectedOption) {
+      Alert.alert("Error", "Please select an alley to start.");
+      return;
+    }
+
+    if (!selectedBus) {
+      Alert.alert("Error", "No bus selected.");
+      return;
+    }
+
+    const data = {
+      route: selectedOption, // The selected alley option
+      vehicle_assignment_id: selectedBus.vehicle_assignment_id, // The vehicle assignment ID
+    };
+
+    try {
+      // Call the startAlley service
+      const response = await startAlley(data);
+      // On success, you can trigger a callback to reset the timer, or show a success message
+      console.log("Alley started successfully:", response);
+      onConfirm(); // Reset the timer
+      onClose(); // Close the modal
+    } catch (error) {
+      console.error("Error starting alley:", error);
+      Alert.alert("Error", "Failed to start the alley. Please try again.");
+    }
   };
 
   return (
@@ -36,10 +66,10 @@ const AlleyModal: React.FC<AlleyModalProps> = ({
               <Icon name="bus" size={50} color="black" />
               <View style={styles.titleWrapper}>
                 <Text style={styles.busTitle}>
-                  {selectedBus?.bus || "No Bus Selected"}
+                  {selectedBus?.vehicle_id || "No Bus Selected"} {/* Display selected bus */}
                 </Text>
                 <Text style={styles.busStatus}>
-                  {selectedBus?.status || "No Status Available"}
+                  {selectedBus?.status || "No Status Available"} {/* Display bus status */}
                 </Text>
                 <Text style={styles.StatusText}>CURRENT STATUS</Text>
               </View>
@@ -47,7 +77,7 @@ const AlleyModal: React.FC<AlleyModalProps> = ({
           </View>
 
           {/* Alley Label */}
-          <Text style={styles.dispatchLabel}>On Alley In:</Text>
+          <Text style={styles.dispatchLabel}>Alley On:</Text>
 
           {/* Alley Options */}
           <View style={styles.dispatchOptions}>
@@ -72,10 +102,7 @@ const AlleyModal: React.FC<AlleyModalProps> = ({
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.dispatchButton}
-              onPress={() => {
-                onConfirm(); // Reset the timer
-                onClose(); // Close the modal
-              }}
+              onPress={handleConfirm}
             >
               <Text style={styles.dispatchText}>Confirm</Text>
             </TouchableOpacity>

@@ -1,12 +1,13 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, TouchableOpacity, Modal, StyleSheet } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
+import { startDispatch, endAlley } from "@/services/dispatch/dispatchServices"; // Import the services
 
 interface DispatchModalProps {
   isVisible: boolean;
   onClose: () => void;
-  selectedBus: { bus: string; status: string } | null;
-  onConfirm: () => void; // Prop for resetting the timer
+  selectedBus: { vehicle_id: string; status: string; vehicle_assignment_id: number; dispatch_logs_id?: number } | null;
+  onConfirm: () => void;
 }
 
 const DispatchModal: React.FC<DispatchModalProps> = ({
@@ -16,10 +17,46 @@ const DispatchModal: React.FC<DispatchModalProps> = ({
   onConfirm,
 }) => {
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const handleOptionSelect = (option: string) => {
     setSelectedOption(option);
   };
+
+  const handleConfirm = async () => {
+    if (!selectedBus) return;
+  
+    setLoading(true);
+  
+    try {
+      // Create an array of promises for both actions
+      const promises = [];
+  
+      // If the bus is on alley, end the alley
+      if (selectedBus.status === "on alley" && selectedBus.dispatch_logs_id) {
+        promises.push(endAlley(selectedBus.dispatch_logs_id));
+      }
+  
+      // If the bus is not on alley, start the dispatch
+      if (selectedBus.status !== "idle") {
+        const data = {
+          route: selectedOption,
+          vehicle_assignment_id: selectedBus.vehicle_assignment_id,
+        };
+        promises.push(startDispatch(data));
+      }
+  
+      // Wait for both promises to complete simultaneously
+      await Promise.all(promises);
+  
+      onConfirm(); // Reset the timer or handle any necessary state updates
+      onClose(); // Close the modal
+    } catch (error) {
+      console.error("Error handling dispatch confirm:", error);
+    } finally {
+      setLoading(false);
+    }
+  };  
 
   return (
     <Modal
@@ -36,10 +73,10 @@ const DispatchModal: React.FC<DispatchModalProps> = ({
               <Icon name="bus" size={50} color="black" />
               <View style={styles.titleWrapper}>
                 <Text style={styles.busTitle}>
-                  {selectedBus?.bus || "No Bus Selected"}
+                  {selectedBus?.vehicle_id || "No Bus Selected"} {/* Display selected bus */}
                 </Text>
                 <Text style={styles.busStatus}>
-                  {selectedBus?.status || "No Status Available"}
+                  {selectedBus?.status || "No Status Available"} {/* Display bus status */}
                 </Text>
                 <Text style={styles.StatusText}>CURRENT STATUS</Text>
               </View>
@@ -72,12 +109,14 @@ const DispatchModal: React.FC<DispatchModalProps> = ({
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.dispatchButton}
-              onPress={() => {
-                onConfirm(); // Reset the timer
-                onClose(); // Close the modal
-              }}
+              onPress={handleConfirm}
+              disabled={loading} // Disable button when loading
             >
-              <Text style={styles.dispatchText}>Confirm</Text>
+              {loading ? (
+                <Text style={styles.dispatchText}>Processing...</Text>
+              ) : (
+                <Text style={styles.dispatchText}>Confirm</Text>
+              )}
             </TouchableOpacity>
           </View>
         </View>
