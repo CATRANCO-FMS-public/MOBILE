@@ -5,41 +5,66 @@ import {
   StyleSheet,
   TouchableOpacity,
   Dimensions,
-  Image
+  Image,
 } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
-import { Link } from "expo-router";
 import { useRouter } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { logout } from "@/services/authentication/authServices";
 import { viewProfile } from "@/services/profile/profileServices";
 import renderImage from "@/constants/renderImage/renderImage";
 
 const Sidebar = ({ isVisible, onClose }) => {
-
   const [profile, setProfile] = useState(null);
+  const [activeMenu, setActiveMenu] = useState("/(tabs)/dispatch"); // Default active menu
   const router = useRouter();
 
-  // Fetch profile data when the sidebar is visible
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const profileData = await viewProfile(); // Call viewProfile function
-        setProfile(profileData); // Store the profile data in the state
+        const profileData = await viewProfile();
+        setProfile(profileData);
       } catch (error) {
         console.error("Error fetching profile:", error);
       }
     };
 
     if (isVisible) {
-      fetchProfile(); // Fetch profile data when the sidebar is visible
+      fetchProfile();
     }
-  }, [isVisible]); // Re-fetch profile data when the sidebar visibility changes
+  }, [isVisible]);
+
+  useEffect(() => {
+    // Retrieve the saved active menu from AsyncStorage on mount
+    const getActiveMenu = async () => {
+      try {
+        const savedActiveMenu = await AsyncStorage.getItem("activeMenu");
+        if (savedActiveMenu) {
+          setActiveMenu(savedActiveMenu);
+        }
+      } catch (error) {
+        console.error("Error retrieving active menu:", error);
+      }
+    };
+    getActiveMenu();
+  }, []);
+
+  const handleMenuClick = async (menu) => {
+    try {
+      setActiveMenu(menu); // Set the clicked menu item as active
+      await AsyncStorage.setItem("activeMenu", menu); // Save the active menu to AsyncStorage
+      router.push(menu); // Navigate to the selected menu
+    } catch (error) {
+      console.error("Error saving active menu:", error);
+    }
+  };
 
   const handleLogout = async () => {
     try {
-      await logout(); 
+      await logout();
+      await AsyncStorage.removeItem("activeMenu"); // Clear the active menu on logout
       router.push("/auth/login");
-      console.log('Sucessfully Logged Out');
+      console.log("Successfully Logged Out");
     } catch (error) {
       console.error("Logout error:", error);
     }
@@ -56,10 +81,11 @@ const Sidebar = ({ isVisible, onClose }) => {
 
           {/* Profile Section */}
           <View style={styles.profileSection}>
-            {/* Display Profile Image or Frame if Image is not available */}
             {profile?.profile?.user_profile_image ? (
               <Image
-                source={{ uri: `${renderImage}/${profile.profile.user_profile_image}` }}
+                source={{
+                  uri: `${renderImage}/${profile.profile.user_profile_image}`,
+                }}
                 style={styles.profileImage}
               />
             ) : (
@@ -74,25 +100,72 @@ const Sidebar = ({ isVisible, onClose }) => {
 
           {/* Menu Options */}
           <View style={styles.menuOptions}>
-            {/* Dispatch Management Link */}
-            <Link href="/(tabs)/dispatch" style={styles.menuItem}>
-              <Text style={styles.menuText}>Dispatch Management</Text>
-            </Link>
-            {/* Dispatch Setting Link */}
-            <Link href="/(tabs)/DispatchSettings" style={styles.menuItem}>
-              <Text style={styles.menuText}>Dispatch Setting</Text>
-            </Link>
+            {/* Dispatch Management */}
+            <TouchableOpacity
+              style={[
+                styles.menuItem,
+                activeMenu === "/(tabs)/dispatch" && styles.activeMenuItem,
+              ]}
+              onPress={() => handleMenuClick("/(tabs)/dispatch")}
+            >
+              <Text
+                style={[
+                  styles.menuText,
+                  activeMenu === "/(tabs)/dispatch" && styles.activeMenuText,
+                ]}
+              >
+                Dispatch Management
+              </Text>
+            </TouchableOpacity>
 
-            {/* Profile Settings Link */}
-            <Link href="/(tabs)/accountSettings" style={styles.menuItem}>
-              <Text style={styles.menuText}>Account Settings</Text>
-            </Link>
+            {/* Dispatch Setting */}
+            <TouchableOpacity
+              style={[
+                styles.menuItem,
+                activeMenu === "/(tabs)/DispatchSettings" &&
+                  styles.activeMenuItem,
+              ]}
+              onPress={() => handleMenuClick("/(tabs)/DispatchSettings")}
+            >
+              <Text
+                style={[
+                  styles.menuText,
+                  activeMenu === "/(tabs)/DispatchSettings" &&
+                    styles.activeMenuText,
+                ]}
+              >
+                Dispatch Setting
+              </Text>
+            </TouchableOpacity>
 
-            {/* Logout Button */}
-            <TouchableOpacity style={styles.menuItem} onPress={handleLogout}>
-              <Text style={styles.menuText}>Logout</Text>
+            {/* Profile Settings */}
+            <TouchableOpacity
+              style={[
+                styles.menuItem,
+                activeMenu === "/(tabs)/accountSettings" &&
+                  styles.activeMenuItem,
+              ]}
+              onPress={() => handleMenuClick("/(tabs)/accountSettings")}
+            >
+              <Text
+                style={[
+                  styles.menuText,
+                  activeMenu === "/(tabs)/accountSettings" &&
+                    styles.activeMenuText,
+                ]}
+              >
+                Account Settings
+              </Text>
             </TouchableOpacity>
           </View>
+            {/* Logout */}
+            
+            <View style={styles.logoutContainer}>
+              <TouchableOpacity style={styles.menuItem} onPress={handleLogout}>
+                <Text style={styles.menuText}>Logout</Text>
+              </TouchableOpacity>
+            </View>
+          
         </View>
       )}
     </>
@@ -101,62 +174,77 @@ const Sidebar = ({ isVisible, onClose }) => {
 
 const styles = StyleSheet.create({
   sidebarContainer: {
-    position: "absolute", // Make the sidebar absolute to stay on top
-    top: 0, // Ensure it starts from the top of the screen
-    left: 0, // Align to the left
-    width: Dimensions.get("window").width * 0.6, // Set sidebar width (60% of screen)
-    height: "110%", // Make it span the full height of the screen
-    backgroundColor: "#f5f5f5", // Sidebar background color
-    zIndex: 1000, // Ensure it stays on top of other elements
-    paddingTop: 40, // Padding to avoid content from sticking to the top
-    paddingLeft: 20, // Padding inside the sidebar
-    shadowColor: "#000", // Shadow color for sidebar for depth effect
-    shadowOffset: { width: 2, height: 2 }, // Shadow offset
-    shadowOpacity: 0.3, // Shadow opacity
-    shadowRadius: 10, // Shadow radius for soft edges
+    position: "absolute",
+    top: 0,
+    left: 0,
+    width: Dimensions.get("window").width * 0.6,
+    height: "110%",
+    backgroundColor: "#f5f5f5",
+    zIndex: 1000,
+    paddingTop: 40,
+    shadowColor: "#000",
+    shadowOffset: { width: 2, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
   },
   closeButton: {
-    position: "absolute", // Absolute positioning for the close button
-    top: 20, // Top margin
-    right: 20, // Right margin
+    position: "absolute",
+    top: 20,
+    right: 20,
   },
   profileSection: {
-    alignItems: "center", // Center the profile section horizontally
-    marginBottom: 30, // Bottom margin for spacing
+    alignItems: "center",
+    marginBottom: 30,
   },
   profileImage: {
-    width: 80,  // Customize width
-    height: 80, // Customize height
-    borderRadius: 40, // Circular border for profile image
+    borderWidth: 2,
+    borderColor: "#333",
+    width: 80,
+    height: 80,
+    borderRadius: 40,
   },
   imageFrame: {
-    width: 80,  // Size of the frame
-    height: 80, // Size of the frame
-    borderRadius: 40, // Circular border for the frame
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#f0f0f0", // Frame background color
-    borderWidth: 2, // Frame border thickness
-    borderColor: "#ddd", // Border color
+    backgroundColor: "#f0f0f0",
+    borderWidth: 2,
+    borderColor: "#ddd",
   },
   profileName: {
-    fontSize: 18, // Profile name font size
-    fontWeight: "bold", // Make the profile name bold
-    marginTop: 10, // Margin between profile icon and name
+    fontSize: 18,
+    fontWeight: "bold",
+    marginTop: 10,
   },
   menuOptions: {
-    marginTop: 20, // Margin for spacing between profile section and menu options
-    flex: 1, // Ensure the menu options fill available space
+    marginTop: 20,
+    flex: 6,
   },
   menuItem: {
-    paddingVertical: 15, // Padding for each menu item
-    borderBottomWidth: 1, // Border at the bottom of each menu item
-    borderBottomColor: "#ddd", // Border color for separation
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: "#ddd",
   },
   menuText: {
-    fontSize: 16, // Font size for the menu text
-    color: "#333", // Color for menu text
+    marginLeft: 20,
+    fontSize: 16,
+    color: "#333",
   },
+  activeMenuItem: {
+    backgroundColor: "#e0e0e0",
+  },
+  activeMenuText: {
+    marginLeft: 35,
+    color: "#007BFF",
+    fontWeight: "bold",
+  },
+  logoutContainer:{
+    flex: 1,
+    borderTopWidth: 1,
+    borderTopColor: "#ddd",
+  }
 });
 
 export default Sidebar;

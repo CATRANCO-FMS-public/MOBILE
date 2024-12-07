@@ -91,7 +91,7 @@ const BusList: React.FC<BusListProps> = ({ selectedBus, setSelectedBus }) => {
           <Icon name="bus" size={20} color="black" />
           <View style={{ flex: 1, flexDirection: "column" }}>
             <Text style={styles.busText}>{item.vehicle_id}</Text>
-            <Text style={styles.statusRouteText}>{`${item.route} | ${item.status}`}</Text>
+            <Text style={styles.statusRouteText}>{`${item.route}\n| ${item.status}`} |</Text>
           </View>
         </TouchableOpacity>
       )}
@@ -102,11 +102,11 @@ const BusList: React.FC<BusListProps> = ({ selectedBus, setSelectedBus }) => {
 const styles = StyleSheet.create({
   busCard: {
     margin: 7,
-    padding: 20,
+    padding: 15,
     borderRadius: 10,
     flexDirection: "row",
     alignItems: "center",
-    width: Dimensions.get("window").width - 225,
+    width: "46.2%",
   },
   selectedBusCard: {
     borderWidth: 2,
@@ -121,7 +121,7 @@ const styles = StyleSheet.create({
     marginLeft: 10,
     fontSize: 13,
     fontStyle: 'italic',
-    color: "#FFF",
+    color: "#000",
   },
 });
 

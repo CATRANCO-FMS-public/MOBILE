@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "dispatch-app",
-    "slug": "dispatch-app",
+    "name": "TransitTrack-app",
+    "slug": "TransitTrack-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/catranco_logo.png",

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,9 +8,15 @@ import {
   Alert,
   StyleSheet,
 } from "react-native";
-import Sidebar from "../components/sidebar";
+import Sidebar from "../components/Sidebar";
 import Icon from "react-native-vector-icons/Ionicons";
 import TimerEdit from "../components/DispatchEdit";
+import {
+  getAllTimers,
+  createTimer,
+  updateTimer,
+  deleteTimer,
+} from "@/services/timer/timersServices";
 
 interface Interval {
   id: string;
@@ -21,22 +27,7 @@ interface Interval {
 }
 
 const ClockSetting: React.FC = () => {
-  const [intervals, setIntervals] = useState<Interval[]>([
-    {
-      id: "1",
-      name: "Normal Interval",
-      startTime: "05:00 AM",
-      endTime: "10:00 PM",
-      timerLimit: 10,
-    },
-    {
-      id: "2",
-      name: "Rush Hour Interval",
-      startTime: "05:00 AM",
-      endTime: "10:00 AM",
-      timerLimit: 5,
-    },
-  ]);
+  const [intervals, setIntervals] = useState<Interval[]>([]);
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [currentInterval, setCurrentInterval] = useState<Interval>({
@@ -46,6 +37,52 @@ const ClockSetting: React.FC = () => {
     endTime: "",
     timerLimit: 0,
   });
+  const [loading, setLoading] = useState(true);
+
+  // Helper functions for time conversion
+  const formatTo12Hour = (time: string) => {
+    const [hour, minute] = time.split(":");
+    const date = new Date();
+    date.setHours(parseInt(hour), parseInt(minute));
+    return date.toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
+  };
+
+  const formatTo24Hour = (time: string) => {
+    const [timePart, modifier] = time.split(" ");
+    let [hour, minute] = timePart.split(":");
+    if (modifier === "PM" && parseInt(hour) !== 12) {
+      hour = String(parseInt(hour) + 12);
+    }
+    if (modifier === "AM" && parseInt(hour) === 12) {
+      hour = "00";
+    }
+    return `${hour}:${minute}`;
+  };
+
+  // Fetch intervals from the API
+  const fetchIntervals = async () => {
+    try {
+      const response = await getAllTimers();
+      const formattedIntervals = response.timers.map((timer: any) => ({
+        id: timer.timer_id,
+        name: timer.title,
+        startTime: formatTo12Hour(timer.start_time), 
+        endTime: formatTo12Hour(timer.end_time),     
+        timerLimit: timer.minutes_interval,
+      }));
+      setIntervals(formattedIntervals);
+    } catch (error) {
+      Alert.alert("Error", "Failed to fetch intervals. Please try again.");
+    }
+  };
+
+  useEffect(() => {
+    fetchIntervals();
+  }, []);
 
   const handleAddInterval = () => {
     setCurrentInterval({
@@ -66,38 +103,54 @@ const ClockSetting: React.FC = () => {
     }
   };
 
-  const handleUpdateInterval = (updatedInterval: Interval) => {
-    setIntervals((prev) =>
-      prev.map((interval) =>
-        interval.id === updatedInterval.id ? { ...updatedInterval } : interval
-      )
-    );
-    setModalVisible(false);
+  const handleSaveInterval = async (newInterval: Interval) => {
+    try {
+      const sanitizedInterval = {
+        ...newInterval,
+        start_time: newInterval.startTime.replace(/\s+/g, ' ').trim(), 
+        end_time: newInterval.endTime.replace(/\s+/g, ' ').trim(),   
+      };
+  
+      console.log("Sending data:", sanitizedInterval);
+  
+      if (sanitizedInterval.id) {
+        await updateTimer(sanitizedInterval.id, {
+          title: sanitizedInterval.name,
+          start_time: sanitizedInterval.start_time,
+          end_time: sanitizedInterval.end_time,
+          minutes_interval: sanitizedInterval.timerLimit,
+        });
+      } else {
+        const response = await createTimer({
+          title: sanitizedInterval.name,
+          start_time: sanitizedInterval.start_time,
+          end_time: sanitizedInterval.end_time,
+          minutes_interval: sanitizedInterval.timerLimit,
+        });
+      }
+      fetchIntervals();
+      setModalVisible(false);
+    } catch (error) {
+      console.error(`Error updating timer with ID ${newInterval.id}:`, error.response?.data || error.message);
+      Alert.alert("Error", "Failed to save the interval. Please try again.");
+    }
   };
-
-  const handleCreateInterval = (newInterval: Interval) => {
-    setIntervals((prev) => [
-      ...prev,
-      { id: Date.now().toString(), ...newInterval },
-    ]);
-    setModalVisible(false);
-  };
-
+  
   const handleDeleteInterval = (id: string) => {
     Alert.alert(
       "Delete Interval",
       "Are you sure you want to delete this interval?",
       [
-        {
-          text: "Cancel",
-          style: "cancel",
-        },
+        { text: "Cancel", style: "cancel" },
         {
           text: "Delete",
-          onPress: () => {
-            setIntervals((prev) =>
-              prev.filter((interval) => interval.id !== id)
-            );
+          onPress: async () => {
+            try {
+              await deleteTimer(id);
+              setIntervals((prev) => prev.filter((interval) => interval.id !== id));
+            } catch (error) {
+              Alert.alert("Error", "Failed to delete the interval. Please try again.");
+            }
           },
         },
       ]
@@ -154,7 +207,7 @@ const ClockSetting: React.FC = () => {
       <TimerEdit
         visible={modalVisible}
         interval={currentInterval}
-        onSave={currentInterval.id ? handleUpdateInterval : handleCreateInterval}
+        onSave={handleSaveInterval}
         onCancel={() => setModalVisible(false)}
         onChange={setCurrentInterval}
         title={currentInterval.id ? "Edit Interval" : "Create New Interval"}
@@ -188,37 +241,36 @@ const styles = StyleSheet.create({
   },
   buttonContainer: {
     flexDirection: "row",
-    justifyContent: "center", // Center the buttons horizontally
+    justifyContent: "space-between",
     marginTop: 10,
-    width: "100%", // Ensure buttons take the full width of the container
   },
   editButton: {
     backgroundColor: "#007bff",
-    paddingVertical: 12,
-    paddingHorizontal: 25,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
     borderRadius: 5,
-    marginRight: 10, // Add some space between buttons
-    width: "45%", // Make the buttons wider
   },
   deleteButton: {
     backgroundColor: "#dc3545",
-    paddingVertical: 12,
-    paddingHorizontal: 25,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
     borderRadius: 5,
-    width: "45%", // Make the buttons wider
   },
   editText: {
     color: "#fff",
-    textAlign: "center", // Center the text inside the button
   },
   deleteText: {
     color: "#fff",
-    textAlign: "center", // Center the text inside the button
   },
   menuButton: {
     position: "absolute",
     top: 30,
     left: 20,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
   },
 });
 

@@ -1,22 +1,21 @@
-import React, { useState, useEffect } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import {
   View,
   Text,
   StyleSheet,
-  FlatList,
-  Dimensions,
   TouchableOpacity,
   Modal,
-  TouchableWithoutFeedback,
+  ActivityIndicator
 } from "react-native";
 import { useRouter } from "expo-router";
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE  } from "react-native-maps";
 import Icon from "react-native-vector-icons/Ionicons";
-import Sidebar from "../components/sidebar";
+import Sidebar from "../components/Sidebar";
 import DispatchModal from "../components/DispatchModal";
 import AlleyModal from "../components/AlleyModal";
 import echo from "../../constants/utils/pusherConfig"; 
 import BusList from "../components/Buslist";
+import Timer from "../components/Timer";
 
 const App = () => {
   const [sidebarVisible, setSidebarVisible] = useState(false);
@@ -25,14 +24,35 @@ const App = () => {
   const [dispatchModalVisible, setDispatchModalVisible] = useState(false);
   const [alleyModalVisible, setAlleyModalVisible] = useState(false);
   const [selectedBus, setSelectedBus] = useState<{ vehicle_id: string; status: string } | null>(null);
-  const [timer, setTimer] = useState(600); // 10 minutes default (in seconds)
-  const [isRunning, setIsRunning] = useState(false);
   const [isHidden, setIsHidden] = useState(false); // To toggle visibility of components
-  const [intervalType, setIntervalTypeState] = useState<"normal" | "rush">("normal");
   const [trackerData, setTrackerData] = useState<any>(null);
   const [path, setPath] = useState<{ latitude: number; longitude: number }[]>([]);
   const [renderMap, setRenderMap] = useState(false);
   const router = useRouter();
+  const mapRef = useRef<MapView>(null);
+  const timerRef = useRef(null);
+
+  // Static locations with custom marker designs
+  const locations = [
+    {
+      id: 1,
+      title: "Canitoan",
+      coordinate: { latitude: 8.4663228, longitude: 124.5853069 },
+      icon: require("../../assets/images/canitoan.png"), // Replace with your custom icon
+    },
+    {
+      id: 2,
+      title: "Silver Creek",
+      coordinate: { latitude: 8.475946, longitude: 124.6120194 },
+      icon: require("../../assets/images/silver_creek.png"), // Replace with your custom icon
+    },
+    {
+      id: 3,
+      title: "Cogon",
+      coordinate: { latitude: 8.4759094, longitude: 124.6514315 },
+      icon: require("../../assets/images/cogon.png"), // Replace with your custom icon
+    },
+  ];
 
   // Using useEffect to setup the real-time listener
   useEffect(() => {
@@ -89,6 +109,23 @@ const App = () => {
       clearInterval(intervalId);
     };
   }, []); 
+
+  // Adjust map to include all markers
+  useEffect(() => {
+    if (mapRef.current) {
+      const allCoordinates = [
+        ...locations.map((location) => location.coordinate),
+        ...(trackerData?.PositionLatitude && trackerData?.PositionLongitude
+          ? [{ latitude: trackerData.PositionLatitude, longitude: trackerData.PositionLongitude }]
+          : []),
+      ];
+      mapRef.current.fitToCoordinates(allCoordinates, {
+        edgePadding: { top: 10, right: 10, bottom: 10, left: 10 },
+        animated: true,
+      });
+    }
+  }, [trackerData]);
+
   // Delay rendering the map by 3 seconds
   useEffect(() => {
     const timeout = setTimeout(() => setRenderMap(true), 10000); // Adjust delay as needed
@@ -104,46 +141,23 @@ const App = () => {
     setCurrentDate(formattedDate);
   }, []);
 
-
-  useEffect(() => {
-    let interval: NodeJS.Timeout | null = null;
-    if (isRunning && timer > 0) {
-      interval = setInterval(() => {
-        setTimer((prev) => prev - 1);
-      }, 1000);
-    } else if (!isRunning && interval) {
-      clearInterval(interval);
-    }
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [isRunning, timer]);
-
   const toggleVisibility = () => {
     setIsHidden((prev) => !prev); // Toggle visibility of busPage, timerContainer, and bottomButtons
   };
 
-  const resetTimer = () => {
-    setTimer(intervalType === "normal" ? 600 : 300); // Reset based on interval type
-  };
-
-  const setIntervalType = (type: "normal" | "rush") => {
-    setIntervalTypeState(type);
-    setTimer(type === "normal" ? 600 : 300); // Update timer based on selected interval type
-    setMenuVisible(false);
-  };
-
-  const formatTime = (seconds: number) => {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${String(minutes).padStart(2, "0")}:${String(remainingSeconds).padStart(2, "0")}`;
+  const handleDispatchConfirm = () => {
+    if (timerRef.current) {
+      timerRef.current.startTimer(); // Start the timer
+    }
+    console.log("Timer started after dispatch confirm");
   };
 
   return (
     <View style={styles.container}>
       {/* Map with Real-Time Marker and Polyline */}
-      {renderMap ? ( // Conditionally render the MapView
+      {renderMap ? (
         <MapView
+          ref={mapRef}
           provider={PROVIDER_GOOGLE}
           style={styles.map}
           region={{
@@ -167,20 +181,32 @@ const App = () => {
                 latitude: trackerData.PositionLatitude,
                 longitude: trackerData.PositionLongitude,
               }}
-              title="Tracker"
+              title="BUS 001"
               description={`Speed: ${trackerData.PositionSpeed} km/h`}
+              icon={require("../../assets/images/bus_on_road.png")}
             />
           )}
+
+          {/* Static Markers with Custom Icons */}
+          {locations.map((location) => (
+            <Marker
+              key={location.id}
+              coordinate={location.coordinate}
+              title={location.title}
+              icon={location.icon} // Custom icon for each location
+            />
+          ))}
         </MapView>
       ) : (
         // Show a loading state while waiting for the map to render
         <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Loading Map...</Text>
+          <ActivityIndicator size="large" color="#007bff" />
+          <Text>Loading map...</Text>
         </View>
       )}
 
       {/* Tracker Details */}
-      <View style={styles.details}>
+      {/* <View style={styles.details}>
         {trackerData ? (
           <>
             <Text>Tracker: {trackerData.Ident}</Text>
@@ -191,7 +217,7 @@ const App = () => {
         ) : (
           <Text>Waiting for data...</Text>
         )}
-      </View>
+      </View> */}
 
       {/* Sidebar */}
       <Sidebar isVisible={sidebarVisible} onClose={() => setSidebarVisible(false)} />
@@ -227,28 +253,12 @@ const App = () => {
               setSelectedBus={setSelectedBus}
             />
           </View>
-          
 
           {/* Timer */}
           <View style={styles.timerContainer}>
-            <TouchableOpacity onPress={() => setIsRunning(!isRunning)} style={styles.playButton}>
-              <Icon
-                name={isRunning ? "pause-outline" : "play-outline"}
-                size={30}
-                color="black"
-              />
-            </TouchableOpacity>
-            <TouchableOpacity onPress={resetTimer} style={styles.resetButton}>
-              <Icon name="refresh-outline" size={30} color="black" />
-            </TouchableOpacity>
-            <Text style={styles.timer}>{formatTime(timer)}</Text>
-            <Text style={styles.timerLabel}>for next dispatch</Text>
-            <TouchableOpacity
-              onPress={() => setMenuVisible(true)}
-              style={styles.settingsIcon}
-            >
-              <Icon name="settings-outline" size={30} color="black" />
-            </TouchableOpacity>
+            <Timer 
+              ref={timerRef}
+            />
           </View>
 
           {/* Bottom Buttons */}
@@ -281,12 +291,14 @@ const App = () => {
         </>
       )}
 
+      {/* Buttom Space */}
+      <View style={styles.buttomSpace} />
+
       {/* Alley Modal */}
       <AlleyModal
         isVisible={alleyModalVisible}
         onClose={() => setAlleyModalVisible(false)}
         selectedBus={selectedBus}
-        onConfirm={resetTimer}
       />
 
       {/* Dispatch Modal */}
@@ -294,35 +306,9 @@ const App = () => {
         isVisible={dispatchModalVisible}
         onClose={() => setDispatchModalVisible(false)}
         selectedBus={selectedBus}
-        onConfirm={() => resetTimer()}
+        onConfirm={handleDispatchConfirm}
+        timerRef={timerRef}
       />
-
-      {/* Settings Modal */}
-      <Modal
-        transparent={true}
-        visible={menuVisible}
-        animationType="fade"
-        onRequestClose={() => setMenuVisible(false)}
-      >
-        <TouchableWithoutFeedback onPress={() => setMenuVisible(false)}>
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalMenu}>
-              <TouchableOpacity
-                onPress={() => setIntervalType("normal")}
-                style={styles.modalOption}
-              >
-                <Text style={styles.modalText}>Normal Interval</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => setIntervalType("rush")}
-                style={styles.modalOption}
-              >
-                <Text style={styles.modalText}>Rush Hour Interval</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </TouchableWithoutFeedback>
-      </Modal>
     </View>
   );
 };
@@ -382,59 +368,18 @@ const styles = StyleSheet.create({
     color: "#666",
   },
   freeSpace: {
-    height: 415,
+    flex: 1,
   },
   busContainer: {
     alignItems: "center",
-    height: 200,
+    height: "24%",
   },
-  timerContainer: {
-    alignItems: "center",
-    backgroundColor: "white",
-    borderRadius: 15,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
-    elevation: 3,
-  },
-  timer: {
-    fontSize: 40,
-    fontWeight: "bold",
-  },
-  timerLabel: {
-    fontSize: 16,
-    color: "#888",
-    marginTop: 5,
-  },
-  settingsIcon: {
-    position: "absolute",
-    top: 17,
-    left: 80,
-    padding: 5,
-    borderRadius: 50,
-    backgroundColor: "#f7f7f7",
-  },
-  playButton: {
-    position: "absolute",
-    top: 17,
-    right: 80,
-    padding: 5,
-    borderRadius: 50,
-    backgroundColor: "#f7f7f7",
-  },
-  resetButton: {
-    position: "absolute",
-    top: 17,
-    right: 30,
-    padding: 5,
-    borderRadius: 50,
-    backgroundColor: "#f7f7f7",
+  timerContainer:{
+    marginBottom: 10,
   },
   bottomButtons: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 10,
     paddingHorizontal: 10,
   },
   button: {
@@ -455,36 +400,8 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "white",
   },
-  // Settings Modal Styles
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  modalMenu: {
-    width: "80%",
-    backgroundColor: "#fff",
-    borderRadius: 15,
-    paddingVertical: 20,
-    paddingHorizontal: 15,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 5,
-    elevation: 5,
-  },
-  modalOption: {
-    paddingVertical: 15,
-    paddingHorizontal: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: "#ddd",
-  },
-  modalText: {
-    fontSize: 18,
-    fontWeight: "500",
-    color: "#333",
-    textAlign: "center",
+  buttomSpace: {
+    height: "2%",
   },
 });
 

@@ -11,7 +11,7 @@ import {
   ToastAndroid,
 } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
-import Sidebar from "../components/sidebar";
+import Sidebar from "../components/Sidebar";
 import { getUser, updateAccount } from "@/services/authentication/authServices";
 import { viewProfile } from "@/services/profile/profileServices";
 import { updateProfileImage, openImagePicker } from "@/services/profile/updateProfile";

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   Modal,
   TouchableOpacity,
 } from "react-native";
+import DateTimePickerModal from "react-native-modal-datetime-picker";
 
 interface TimerEditProps {
   visible: boolean;
@@ -15,7 +16,7 @@ interface TimerEditProps {
   onSave: (interval: Interval) => void;
   onCancel: () => void;
   onChange: (interval: Interval) => void;
-  title: string; // Ensure the type is string
+  title: string;
 }
 
 const TimerEdit: React.FC<TimerEditProps> = ({
@@ -24,14 +25,39 @@ const TimerEdit: React.FC<TimerEditProps> = ({
   onSave,
   onCancel,
   onChange,
-  title, // Receive the dynamic title prop
+  title,
 }) => {
+  const [isStartPickerVisible, setStartPickerVisible] = useState(false);
+  const [isEndPickerVisible, setEndPickerVisible] = useState(false);
+
+  // Format time in 12-hour format with AM/PM
+  const formatTime12Hour = (date: Date) => {
+    const options: Intl.DateTimeFormatOptions = {
+      hour: "2-digit", // Ensure two-digit hour
+      minute: "2-digit",
+      hour12: true,
+    };
+    return date.toLocaleTimeString("en-US", options).replace(/\s+/g, " ").trim(); // Remove extra spaces
+  };
+  
+
+  const handleStartTimeConfirm = (date: Date) => {
+    const formattedTime = formatTime12Hour(date);
+    onChange({ ...interval, startTime: formattedTime });
+    setStartPickerVisible(false);
+  };
+
+  const handleEndTimeConfirm = (date: Date) => {
+    const formattedTime = formatTime12Hour(date);
+    onChange({ ...interval, endTime: formattedTime });
+    setEndPickerVisible(false);
+  };
+
   return (
     <Modal visible={visible} transparent={true} animationType="fade">
       <View style={styles.overlay}>
         <View style={styles.modalContainer}>
-          <Text style={styles.modalTitle}>{title}</Text>{" "}
-          {/* Display the dynamic title */}
+          <Text style={styles.modalTitle}>{title}</Text>
           <Text style={styles.fieldLabel}>Title:</Text>
           <TextInput
             style={styles.input}
@@ -40,18 +66,32 @@ const TimerEdit: React.FC<TimerEditProps> = ({
             onChangeText={(text) => onChange({ ...interval, name: text })}
           />
           <Text style={styles.fieldLabel}>Start Time:</Text>
-          <TextInput
+          <TouchableOpacity
+            onPress={() => setStartPickerVisible(true)}
             style={styles.input}
-            placeholder="Start Time"
-            value={interval.startTime}
-            onChangeText={(text) => onChange({ ...interval, startTime: text })}
+          >
+            <Text>{interval.startTime || "Select Start Time"}</Text>
+          </TouchableOpacity>
+          <DateTimePickerModal
+            isVisible={isStartPickerVisible}
+            mode="time"
+            onConfirm={handleStartTimeConfirm}
+            onCancel={() => setStartPickerVisible(false)}
+            is24Hour={false} // Ensures 12-hour format in picker
           />
           <Text style={styles.fieldLabel}>End Time:</Text>
-          <TextInput
+          <TouchableOpacity
+            onPress={() => setEndPickerVisible(true)}
             style={styles.input}
-            placeholder="End Time"
-            value={interval.endTime}
-            onChangeText={(text) => onChange({ ...interval, endTime: text })}
+          >
+            <Text>{interval.endTime || "Select End Time"}</Text>
+          </TouchableOpacity>
+          <DateTimePickerModal
+            isVisible={isEndPickerVisible}
+            mode="time"
+            onConfirm={handleEndTimeConfirm}
+            onCancel={() => setEndPickerVisible(false)}
+            is24Hour={false} // Ensures 12-hour format in picker
           />
           <Text style={styles.fieldLabel}>Minutes Interval:</Text>
           <TextInput
@@ -64,8 +104,8 @@ const TimerEdit: React.FC<TimerEditProps> = ({
             }
           />
           <View style={styles.buttonContainer}>
-            <Button title="Save Interval" onPress={() => onSave(interval)} />
             <Button title="Cancel" onPress={onCancel} color="gray" />
+            <Button title="Save Interval" onPress={() => onSave(interval)} />
           </View>
         </View>
       </View>
@@ -78,28 +118,28 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.5)", // Semi-transparent background
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
   modalContainer: {
     width: "80%",
     backgroundColor: "white",
     padding: 20,
     borderRadius: 10,
-    elevation: 5, // Shadow effect
+    elevation: 5,
   },
   modalTitle: {
     fontSize: 20,
     fontWeight: "bold",
     marginBottom: 20,
     textAlign: "center",
-    color: "red", // Red title color
+    color: "red",
   },
   fieldLabel: {
     fontSize: 16,
     fontWeight: "bold",
     marginBottom: 5,
     marginTop: 10,
-    color: "#333", // Label color
+    color: "#333",
   },
   input: {
     borderWidth: 1,

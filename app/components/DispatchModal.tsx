@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { View, Text, TouchableOpacity, Modal, StyleSheet } from "react-native";
+import React, { useState } from "react";
+import { View, Text, TouchableOpacity, Modal, StyleSheet, ToastAndroid } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
 import { startDispatch, endAlley } from "@/services/dispatch/dispatchServices"; // Import the services
 
@@ -15,6 +15,7 @@ const DispatchModal: React.FC<DispatchModalProps> = ({
   onClose,
   selectedBus,
   onConfirm,
+  timerRef,
 }) => {
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -29,6 +30,11 @@ const DispatchModal: React.FC<DispatchModalProps> = ({
     setLoading(true);
   
     try {
+      if (timerRef?.current?.isRunning()) {
+        ToastAndroid.show("Cannot dispatch until the timer is completed.", ToastAndroid.BOTTOM);
+        return;
+      }
+
       // Create an array of promises for both actions
       const promises = [];
   
@@ -48,7 +54,7 @@ const DispatchModal: React.FC<DispatchModalProps> = ({
   
       // Wait for both promises to complete simultaneously
       await Promise.all(promises);
-  
+
       onConfirm(); // Reset the timer or handle any necessary state updates
       onClose(); // Close the modal
     } catch (error) {

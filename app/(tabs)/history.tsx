@@ -12,7 +12,6 @@ import { Table, TableWrapper, Row } from "react-native-reanimated-table";
 import { useRouter } from "expo-router";
 import Icon from "react-native-vector-icons/Ionicons";
 import { Calendar } from "react-native-calendars";
-import RNHTMLtoPDF from "react-native-html-to-pdf";
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
 import { getAllDispatches } from "@/services/dispatch/dispatchServices";
