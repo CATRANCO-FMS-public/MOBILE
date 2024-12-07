@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,240 +8,215 @@ import {
   Alert,
   Modal,
 } from "react-native";
-import { Table, TableWrapper, Row, Rows } from "react-native-reanimated-table";
+import { Table, TableWrapper, Row } from "react-native-reanimated-table";
 import { useRouter } from "expo-router";
 import Icon from "react-native-vector-icons/Ionicons";
 import { Calendar } from "react-native-calendars";
 import RNHTMLtoPDF from "react-native-html-to-pdf";
+import * as Print from "expo-print";
+import * as Sharing from "expo-sharing";
+import { getAllDispatches } from "@/services/dispatch/dispatchServices";
 
 const History = () => {
+  const [dispatchData, setDispatchData] = useState([]);
   const [selectedDate, setSelectedDate] = useState(null);
-  const [showCalendar, setShowCalendar] = useState(false); // State for showing calendar
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  // Sample records (3 random records)
-  const records = [
-    {
-      date: "2024-12-01",
-      busNumber: 1,
-      action: "Dispatch",
-      time: "08:00 AM",
-      routeFrom: "Silver Creek",
-      routeTo: "Cogon",
-    },
-    {
-      date: "2024-12-02",
-      busNumber: 2,
-      action: "Alley",
-      time: "09:15 AM",
-      routeFrom: "Cogon",
-      routeTo: "Canitoan",
-    },
-    {
-      date: "2024-12-03",
-      busNumber: 3,
-      action: "Dispatch",
-      time: "10:30 AM",
-      routeFrom: "Canitoan",
-      routeTo: "Silver Creek",
-    },
-    {
-      date: "2024-12-04",
-      busNumber: 4,
-      action: "Dispatch",
-      time: "07:45 AM",
-      routeFrom: "Cogon",
-      routeTo: "Canitoan",
-    },
-    {
-      date: "2024-12-05",
-      busNumber: 5,
-      action: "Alley",
-      time: "11:00 AM",
-      routeFrom: "Canitoan",
-      routeTo: "Silver Creek",
-    },
-    {
-      date: "2024-12-06",
-      busNumber: 6,
-      action: "Dispatch",
-      time: "02:30 PM",
-      routeFrom: "Silver Creek",
-      routeTo: "Cogon",
-    },
-    {
-      date: "2024-12-07",
-      busNumber: 7,
-      action: "Dispatch",
-      time: "03:00 PM",
-      routeFrom: "Cogon",
-      routeTo: "Canitoan",
-    },
-    {
-      date: "2024-12-08",
-      busNumber: 8,
-      action: "Alley",
-      time: "09:30 AM",
-      routeFrom: "Canitoan",
-      routeTo: "Silver Creek",
-    },
-    {
-      date: "2024-12-09",
-      busNumber: 9,
-      action: "Dispatch",
-      time: "01:00 PM",
-      routeFrom: "Silver Creek",
-      routeTo: "Cogon",
-    },
-    {
-      date: "2024-12-10",
-      busNumber: 10,
-      action: "Alley",
-      time: "12:45 PM",
-      routeFrom: "Cogon",
-      routeTo: "Canitoan",
-    },
-    {
-      date: "2024-12-11",
-      busNumber: 11,
-      action: "Dispatch",
-      time: "05:00 PM",
-      routeFrom: "Canitoan",
-      routeTo: "Silver Creek",
-    },
-    {
-      date: "2024-12-12",
-      busNumber: 12,
-      action: "Dispatch",
-      time: "07:00 AM",
-      routeFrom: "Silver Creek",
-      routeTo: "Cogon",
-    },
-    {
-      date: "2024-12-13",
-      busNumber: 1,
-      action: "Alley",
-      time: "09:00 AM",
-      routeFrom: "Cogon",
-      routeTo: "Canitoan",
-    },
-    // More records...
-  ];
+  // Column widths
+  const widthArr = [120, 120, 100, 150, 150, 150, 120, 120];
 
-  // Table data mapping
-  const tableData = records.map((record) => [
-    record.date,
-    record.busNumber,
-    record.action,
-    record.time,
-    record.routeFrom,
-    record.routeTo,
-  ]);
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const data = await getAllDispatches();
+        const transformedData = data.map((log) => {
+          const driver = log.vehicle_assignments.user_profiles.find(
+            (profile) => profile.position === "driver"
+          );
+          const pao = log.vehicle_assignments.user_profiles.find(
+            (profile) => profile.position === "passenger_assistant_officer"
+          );
+          return [
+            log.vehicle_assignments?.vehicle_id || "N/A",
+            log.start_time,
+            log.end_time || "N/A",
+            log.status,
+            log.route,
+            log.created_dispatch?.username || "N/A",
+            log.updated_dispatch?.username || "N/A",
+            driver?.last_name || "N/A",
+            pao?.last_name || "N/A",
+          ];
+        });
+        setDispatchData(transformedData);
+        console.log("Dispatch Data:", dispatchData);
+        setLoading(false);
+      } catch (error) {
+        Alert.alert("Error", "Failed to fetch dispatch logs.");
+        setLoading(false);
+      }
+    };
 
-  // Table header
+    fetchData();
+  }, []);
+
   const tableHead = [
-    "Date",
-    "Bus No.",
-    "Action",
-    "Time",
-    "Route From",
-    "Route To",
+    "Bus Number",
+    "Start Time",
+    "End Time",
+    "Status",
+    "Route",
+    "Created By",
+    "Updated By",
+    "Driver",
+    "PAO",
   ];
 
-  // Handle Date Selection
-  const onDayPress = (day) => {
-    setSelectedDate(day.dateString);
-    setShowCalendar(false); // Close the calendar after selection
-  };
-
-  // Handle Print (PDF Generation)
-  const handlePrint = async () => {
-    try {
-      const htmlContent = `
-        <h1>Dispatch History</h1>
-        <table border="1" style="width:100%">
-          <tr>
-            <th>Date</th>
-            <th>Bus No.</th>
-            <th>Action</th>
-            <th>Time</th>
-            <th>Route From</th>
-            <th>Route To</th>
-          </tr>
-          ${tableData
-            .map(
-              (row) => `
-            <tr>
-              <td>${row[0]}</td>
-              <td>${row[1]}</td>
-              <td>${row[2]}</td>
-              <td>${row[3]}</td>
-              <td>${row[4]}</td>
-              <td>${row[5]}</td>
-            </tr>
-          `
-            )
-            .join("")}
-        </table>
-      `;
-
-      const options = {
-        html: htmlContent,
-        fileName: "dispatch_history",
-        directory: "Documents",
-      };
-      const file = await RNHTMLtoPDF.convert(options);
-      Alert.alert("PDF Created", `Your PDF file is saved at ${file.filePath}`);
-    } catch (error) {
-      Alert.alert("Error", "Failed to generate PDF.");
+  const sharePDF = async (uri) => {
+    if (await Sharing.isAvailableAsync()) {
+      await Sharing.shareAsync(uri);
+    } else {
+      Alert.alert("Error", "Sharing is not available on this device.");
     }
   };
   
+
+  const handlePrint = async () => {
+    try {
+      if (!dispatchData || dispatchData.length === 0) {
+        Alert.alert("Error", "No data available to print.");
+        return;
+      }
+  
+      const htmlContent = `
+        <html>
+          <head>
+            <style>
+              table {
+                width: 100%;
+                border-collapse: collapse;
+              }
+              th, td {
+                border: 1px solid black;
+                text-align: center;
+                padding: 8px;
+              }
+              th {
+                background-color: #f2f2f2;
+              }
+            </style>
+          </head>
+          <body>
+            <h1>Dispatch History</h1>
+            <table>
+              <thead>
+                <tr>
+                  <th>Bus Number</th>
+                  <th>Start Time</th>
+                  <th>End Time</th>
+                  <th>Status</th>
+                  <th>Route</th>
+                  <th>Created By</th>
+                  <th>Updated By</th>
+                  <th>Driver</th>
+                  <th>PAO</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${dispatchData
+                  .map(
+                    (row) => `
+                  <tr>
+                    <td>${row[0]}</td>
+                    <td>${row[1]}</td>
+                    <td>${row[2]}</td>
+                    <td>${row[3]}</td>
+                    <td>${row[4]}</td>
+                    <td>${row[5]}</td>
+                    <td>${row[6]}</td>
+                    <td>${row[7]}</td>
+                    <td>${row[8]}</td>
+                  </tr>
+                `
+                  )
+                  .join("")}
+              </tbody>
+            </table>
+          </body>
+        </html>
+      `;
+  
+      // Create PDF
+      const { uri } = await Print.printToFileAsync({ html: htmlContent });
+      await sharePDF(uri);
+      // Alert with file location
+      Alert.alert("PDF Created", `Your PDF file is saved at: ${uri}`);
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      Alert.alert("Error", "An error occurred while generating the PDF.");
+    }
+  };
+
   const goBack = () => {
     router.back();
-    console.log("click go back");
   };
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backIconButton} onPress={goBack}>
+        <TouchableOpacity style={styles.iconButton} onPress={goBack}>
           <Icon name="caret-back-outline" size={28} color="#333" />
         </TouchableOpacity>
 
         <Text style={styles.title}>Dispatch History</Text>
 
-        <TouchableOpacity style={styles.printIconButton} onPress={handlePrint}>
+        <TouchableOpacity style={styles.iconButton} onPress={handlePrint}>
           <Icon name="print" size={28} color="#333" />
         </TouchableOpacity>
 
-        {/* Calendar icon button */}
         <TouchableOpacity
-          style={styles.calendarIcon}
+          style={styles.iconButton}
           onPress={() => setShowCalendar(!showCalendar)}
         >
-          <Icon name="calendar" size={23} color="#333" />
+          <Icon name="calendar" size={28} color="#333" />
         </TouchableOpacity>
       </View>
 
-      <ScrollView style={styles.tableContainer}>
-        <Table borderStyle={{ borderWidth: 0 }}>
-          <Row
-            data={tableHead}
-            style={styles.headerRow}
-            textStyle={styles.headerText}
-          />
-          <TableWrapper style={styles.wrapper}>
-            <Rows
-              data={tableData}
-              textStyle={styles.rowText}
-              style={styles.row}
-            />
-          </TableWrapper>
-        </Table>
-      </ScrollView>
+      {loading ? (
+        <Text style={styles.loadingText}>Loading...</Text>
+      ) : (
+        <ScrollView horizontal>
+          <View>
+            <Table borderStyle={styles.tableBorder}>
+              <Row
+                data={tableHead}
+                widthArr={widthArr}
+                style={styles.headerRow}
+                textStyle={styles.headerText}
+              />
+            </Table>
+            <ScrollView style={styles.dataWrapper}>
+              <Table borderStyle={styles.tableBorder}>
+                {dispatchData.map((rowData, index) => (
+                  <Row
+                    key={index}
+                    data={rowData}
+                    widthArr={widthArr}
+                    style={[
+                      styles.row,
+                      index % 2 === 0 ? styles.rowEven : styles.rowOdd,
+                    ]}
+                    textStyle={styles.rowText}
+                  />
+                ))}
+              </Table>
+            </ScrollView>
+          </View>
+        </ScrollView>
+      )}
 
-      {/* Calendar Modal */}
       <Modal
         visible={showCalendar}
         animationType="slide"
@@ -254,7 +229,10 @@ const History = () => {
               markedDates={{
                 [selectedDate]: { selected: true, selectedColor: "blue" },
               }}
-              onDayPress={onDayPress}
+              onDayPress={(day) => {
+                setSelectedDate(day.dateString);
+                setShowCalendar(false);
+              }}
             />
             <TouchableOpacity
               style={styles.closeButton}
@@ -272,66 +250,53 @@ const History = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 10,
     backgroundColor: "#fff",
+    padding: 10,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     padding: 10,
-    position: "relative",
-    flexWrap: "wrap", // Ensures items wrap on smaller screens
-    justifyContent: "space-between", // Adds space between the elements
+    justifyContent: "space-between",
   },
   title: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "bold",
-    textAlign: "center",
     color: "#333",
-    flex: 1,
-    marginHorizontal: 10, // Added margin for spacing
   },
-  backIconButton: {
-    position: "absolute",
-    top: 10,
-    left: 10,
-    zIndex: 1,
+  iconButton: {
+    padding: 10,
   },
-  printIconButton: {
-    position: "absolute",
-    right: 10,
-    top: 10,
-  },
-  calendarIcon: {
-    position: "absolute",
-    right: 45,
-    top: 10,
-  },
-  tableContainer: {
-    marginTop: 10,
+  tableBorder: {
+    borderWidth: 2,
+    borderColor: "#C1C0B9",
   },
   headerRow: {
-    height: 60,
-    backgroundColor: "#f1f5eb",
-  },
-  wrapper: {
-    marginTop: 5,
-  },
-  row: {
-    borderBottomWidth: 1,
-    borderBottomColor: "#ddd",
-    flexDirection: "row",
+    height: 50,
+    backgroundColor: "#537791",
   },
   headerText: {
     fontSize: 14,
-    fontWeight: "500",
+    fontWeight: "bold",
+    color: "#fff",
     textAlign: "center",
-    padding: 10,
+  },
+  dataWrapper: {
+    marginTop: -1,
+  },
+  row: {
+    height: 40,
+  },
+  rowEven: {
+    backgroundColor: "#E7E6E1",
+  },
+  rowOdd: {
+    backgroundColor: "#F7F6E7",
   },
   rowText: {
+    padding: 5,
     fontSize: 12,
     textAlign: "center",
-    padding: 5,
   },
   modalContainer: {
     flex: 1,
@@ -341,15 +306,9 @@ const styles = StyleSheet.create({
   },
   calendarModal: {
     width: 300,
-    padding: 15,
     backgroundColor: "#fff",
+    padding: 20,
     borderRadius: 10,
-    borderWidth: 2,
-    borderColor: "#ccc",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
   },
   closeButton: {
     marginTop: 10,
@@ -361,6 +320,12 @@ const styles = StyleSheet.create({
     color: "#fff",
     textAlign: "center",
     fontWeight: "bold",
+  },
+  loadingText: {
+    textAlign: "center",
+    marginTop: 20,
+    fontSize: 16,
+    color: "#666",
   },
 });
 
