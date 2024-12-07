@@ -371,7 +371,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   busContainer: {
-    height: "24%",
+    minHeight: "12%",
+    maxHeight: "24%",
   },
   timerContainer:{
     marginBottom: 10,
