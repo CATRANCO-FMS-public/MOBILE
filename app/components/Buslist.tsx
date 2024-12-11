@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { FlatList, View, Text, TouchableOpacity, StyleSheet, Dimensions } from "react-native";
+import React, { useState, useEffect, useImperativeHandle, forwardRef } from "react";
+import { FlatList, View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
 import { getVehicleAssignments } from "@/services/vehicle/vehicleServices";
 import { getAllDispatches } from "@/services/dispatch/dispatchServices";
@@ -18,60 +18,58 @@ interface BusListProps {
   setSelectedBus: (bus: { vehicle_id: string; status: string; vehicle_assignment_id: number; dispatch_logs_id: number | null }) => void; // Update the setSelectedBus type
 }
 
-const BusList: React.FC<BusListProps> = ({ selectedBus, setSelectedBus }) => {
+const BusList = forwardRef(({ selectedBus, setSelectedBus }: BusListProps, ref) => {
   const [busData, setBusData] = useState<BusData[]>([]);
 
+  const fetchAssignmentsAndDispatches = async () => {
+    try {
+      console.log('fetching data....');
+      const vehicleAssignmentsResponse = await getVehicleAssignments();
+      const dispatchesResponse = await getAllDispatches();
+
+      // Filter out dispatches with 'alley_completed' status
+      const filteredDispatches = dispatchesResponse.filter((dispatch) => dispatch.status !== 'alley_completed');
+
+      const transformedData = vehicleAssignmentsResponse.map((assignment) => {
+        const dispatch = filteredDispatches.find(
+          (dispatch) => dispatch.vehicle_assignment_id === assignment.vehicle_assignment_id
+        );
+        const status = dispatch ? dispatch.status : 'idle';
+        const route = dispatch ? dispatch.route : '';
+        const dispatch_logs_id = dispatch ? dispatch.dispatch_logs_id : null;
+
+        let color = '#D3D3D3'; // Default to idle color
+        if (status === 'on alley') {
+          color = 'rgba(255, 165, 0, 1)';
+        } else if (status === 'on road') {
+          color = 'rgba(173, 255, 47, 1)';
+        }
+
+        return {
+          vehicle_id: `BUS ${assignment.vehicle.vehicle_id}`,
+          status,
+          color,
+          route,
+          vehicle_assignment_id: assignment.vehicle_assignment_id,
+          dispatch_logs_id,
+        };
+      });
+
+      setBusData(transformedData);
+    } catch (error) {
+      console.error('Error fetching vehicle assignments and dispatches:', error);
+    }
+  };
+
   useEffect(() => {
-    const fetchAssignmentsAndDispatches = async () => {
-      try {
-        const vehicleAssignmentsResponse = await getVehicleAssignments();
-        const dispatchesResponse = await getAllDispatches();
-
-        // Filter out dispatches with 'alley_completed' status
-        const filteredDispatches = dispatchesResponse.filter((dispatch) => dispatch.status !== 'alley_completed');
-
-        const transformedData = vehicleAssignmentsResponse.map((assignment) => {
-          const dispatch = filteredDispatches.find(
-            (dispatch) => dispatch.vehicle_assignment_id === assignment.vehicle_assignment_id
-          );
-          const status = dispatch ? dispatch.status : 'idle';
-          const route = dispatch ? dispatch.route : '';
-          const dispatch_logs_id = dispatch ? dispatch.dispatch_logs_id : null;
-
-          let color = '#D3D3D3'; // Default to idle color
-          if (status === 'on alley') {
-            color = 'rgba(255, 165, 0, 1)';
-          } else if (status === 'on road') {
-            color = 'rgba(173, 255, 47, 1)';
-          }
-
-          return {
-            vehicle_id: `BUS ${assignment.vehicle.vehicle_id}`,
-            status,
-            color,
-            route,
-            vehicle_assignment_id: assignment.vehicle_assignment_id,
-            dispatch_logs_id,
-          };
-        });
-
-        setBusData(transformedData);
-      } catch (error) {
-        console.error('Error fetching vehicle assignments and dispatches:', error);
-      }
-    };
-
-    // Call fetchAssignmentsAndDispatches every 1 second
-    const intervalId = setInterval(fetchAssignmentsAndDispatches, 1000);
-
     // Fetch immediately on mount
     fetchAssignmentsAndDispatches();
-
-    // Clean up the interval on component unmount
-    return () => {
-      clearInterval(intervalId);
-    };
   }, []);
+
+  useImperativeHandle(ref, () => ({
+    refreshData: fetchAssignmentsAndDispatches,
+  }));
+
 
   return (
     <FlatList
@@ -97,7 +95,7 @@ const BusList: React.FC<BusListProps> = ({ selectedBus, setSelectedBus }) => {
       )}
     />
   );
-};
+});
 
 const styles = StyleSheet.create({
   busCard: {

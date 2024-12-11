@@ -47,7 +47,13 @@ const Sidebar = ({ isVisible, onClose }) => {
       }
     };
     getActiveMenu();
+  
+    // Cleanup function to clear the active menu on unmount
+    return () => {
+      AsyncStorage.removeItem("activeMenu");
+    };
   }, []);
+  
 
   const handleMenuClick = async (menu) => {
     try {
@@ -157,6 +163,27 @@ const Sidebar = ({ isVisible, onClose }) => {
                 Account Settings
               </Text>
             </TouchableOpacity>
+
+
+            {/* TESET */}
+            <TouchableOpacity
+              style={[
+                styles.menuItem,
+                activeMenu === "/(tabs)/test" &&
+                  styles.activeMenuItem,
+              ]}
+              onPress={() => handleMenuClick("/(tabs)/test")}
+            >
+              <Text
+                style={[
+                  styles.menuText,
+                  activeMenu === "/(tabs)/test" &&
+                    styles.activeMenuText,
+                ]}
+              >
+                Test
+              </Text>
+            </TouchableOpacity>
           </View>
             {/* Logout */}
             
@@ -220,7 +247,7 @@ const styles = StyleSheet.create({
   },
   menuOptions: {
     marginTop: 20,
-    flex: 6,
+    flex: 4,
   },
   menuItem: {
     paddingVertical: 15,

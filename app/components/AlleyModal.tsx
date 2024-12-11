@@ -7,12 +7,14 @@ interface AlleyModalProps {
   isVisible: boolean;
   onClose: () => void;
   selectedBus: { vehicle_id: string; status: string; vehicle_assignment_id: number } | null;
+  onConfirm
 }
 
 const AlleyModal: React.FC<AlleyModalProps> = ({
   isVisible,
   onClose,
   selectedBus,
+  onConfirm,
 }) => {
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
 
@@ -41,6 +43,7 @@ const AlleyModal: React.FC<AlleyModalProps> = ({
       const response = await startAlley(data);
       // On success, you can trigger a callback to reset the timer, or show a success message
       console.log("Alley started successfully:", response);
+      onConfirm();
       onClose(); // Close the modal
     } catch (error) {
       console.error("Error starting alley:", error);
