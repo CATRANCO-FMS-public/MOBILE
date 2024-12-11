@@ -144,12 +144,15 @@ const App = () => {
     }
   }, [trackerData]);
 
-  // Delay rendering the map by 3 seconds
-  useEffect(() => {
+  const refreshTimeout = () => {
     const timeout = setTimeout(() => setRenderMap(true), 10000); // Adjust delay as needed
     return () => clearTimeout(timeout); // Cleanup the timeout on component unmount
-  }, []);
+  };
 
+  // Delay rendering the map by 10 seconds
+  useEffect(() => {
+    refreshTimeout();
+  }, []);
 
   useEffect(() => {
     const date = new Date();
@@ -219,7 +222,7 @@ const App = () => {
             {trackerData && trackerData.location && (
               <Marker
                 coordinate={trackerData.location}
-                title={`Bus ${trackerData.tracker_ident}`}
+                title={`BUS ${trackerData.tracker_ident}`}
                 description={`Speed: ${trackerData.location.speed} km/h`}
                 icon={busIcon} // Dynamically changing the icon
               />
