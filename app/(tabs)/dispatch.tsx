@@ -60,77 +60,77 @@ const App = () => {
 
   // Set up listener when the component mounts
   useEffect(() => {
-
     // Function to setup real-time listener
     const setupRealTimeListener = () => {
       const channel = echo.channel("flespi-data");
 
       // Handle incoming event data
-    const handleEvent = (event: any) => {
-      console.log("Real-time Data Received:", event);
+      const handleEvent = (event: any) => {
+        console.log("Real-time Data Received:", event);
 
-        // Check if event.data exists and is an object
-        if (event && event.location) {
-          const { tracker_ident, location, timestamp, dispatch_log } = event;
+          // Check if event.data exists and is an object
+          if (event && event.location) {
+            const { tracker_ident, vehicle_id, location, timestamp, dispatch_log } = event;
 
-          // Check if location data is available and valid
-          if (location && location.latitude && location.longitude) {
-            // Update path with new coordinates
-            setPath((prevPath) => [
-              ...prevPath,
-              {
-                latitude: location.latitude,
-                longitude: location.longitude,
-              },
-            ]);
+            // Check if location data is available and valid
+            if (location && location.latitude && location.longitude) {
+              // Update path with new coordinates
+              setPath((prevPath) => [
+                ...prevPath,
+                {
+                  latitude: location.latitude,
+                  longitude: location.longitude,
+                },
+              ]);
 
-            // Update trackerData with the latest data
-            setTrackerData({
-              tracker_ident,
-              location,
-              timestamp,
-              dispatch_log,
-            });
+              // Update trackerData with the latest data
+              setTrackerData({
+                tracker_ident,
+                vehicle_id,
+                location,
+                timestamp,
+                dispatch_log,
+              });
 
-            // Update bus icon based on dispatch_log status
-            if (dispatch_log) {
-              if (dispatch_log.status === 'on road') {
-                setBusIcon(require("../../assets/images/bus_on_road.png"));
-              } else if (dispatch_log.status === 'on alley') {
-                setBusIcon(require("../../assets/images/bus_on_alley.png"));
+              // Update bus icon based on dispatch_log status
+              if (dispatch_log) {
+                if (dispatch_log.status === 'on road') {
+                  setBusIcon(require("../../assets/images/bus_on_road.png"));
+                } else if (dispatch_log.status === 'on alley') {
+                  setBusIcon(require("../../assets/images/bus_on_alley.png"));
+                }
+              } else {
+                // If dispatch_log is null, set bus to idle
+                setBusIcon(require("../../assets/images/bus_idle.png"));
               }
             } else {
-              // If dispatch_log is null, set bus to idle
-              setBusIcon(require("../../assets/images/bus_idle.png"));
+              // Clear tracker data if no valid location is available
+              setTrackerData(null);
             }
           } else {
-            // Clear tracker data if no valid location is available
+            // Handle the case where event.data is empty or undefined
+            console.warn("Invalid or empty data received:", event);
             setTrackerData(null);
           }
-        } else {
-          // Handle the case where event.data is empty or undefined
-          console.warn("Invalid or empty data received:", event);
-          setTrackerData(null);
-        }
+        };
+
+        // Listen for the "FlespiDataReceived" event and handle incoming data
+        channel.listen("FlespiDataReceived", handleEvent);
+
+        // Return cleanup function to stop the listener and disconnect
+        return () => {
+          console.log("Cleaning up listener...");
+          channel.stopListening("FlespiDataReceived");
+          echo.disconnect();
+        };
       };
 
-      // Listen for the "FlespiDataReceived" event and handle incoming data
-      channel.listen("FlespiDataReceived", handleEvent);
+      console.log('tracker data', trackerData);
+      // const cleanupListener = setupRealTimeListener();
+      
+      // return cleanupListener; // Cleanup listener on component unmount
 
-      // Return cleanup function to stop the listener and disconnect
-      return () => {
-        console.log("Cleaning up listener...");
-        channel.stopListening("FlespiDataReceived");
-        echo.disconnect();
-      };
-    };
-
-    console.log('tracker data', trackerData);
-    // const cleanupListener = setupRealTimeListener();
-    
-    // return cleanupListener; // Cleanup listener on component unmount
-
-    setupRealTimeListener();
+      setupRealTimeListener();
   }, []); // Empty dependency array means this effect runs only once
 
   // Adjust map to include all markers
@@ -232,7 +232,7 @@ const App = () => {
           {trackerData?.location && (
             <Marker
               coordinate={trackerData.location}
-              title={`BUS ${trackerData.tracker_ident || "Tracker"}`}
+              title={`BUS ${trackerData.vehicle_id || "Unknown"}`}
               description={`Speed: ${trackerData.location.speed || 0} km/h`}
               icon={busIcon} // Dynamically changing the icon
             />
