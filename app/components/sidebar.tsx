@@ -164,26 +164,6 @@ const Sidebar = ({ isVisible, onClose }) => {
               </Text>
             </TouchableOpacity>
 
-
-            {/* TESET */}
-            <TouchableOpacity
-              style={[
-                styles.menuItem,
-                activeMenu === "/(tabs)/test" &&
-                  styles.activeMenuItem,
-              ]}
-              onPress={() => handleMenuClick("/(tabs)/test")}
-            >
-              <Text
-                style={[
-                  styles.menuText,
-                  activeMenu === "/(tabs)/test" &&
-                    styles.activeMenuText,
-                ]}
-              >
-                Test
-              </Text>
-            </TouchableOpacity>
           </View>
             {/* Logout */}
             

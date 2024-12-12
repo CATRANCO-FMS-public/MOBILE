@@ -126,11 +126,11 @@ const App = () => {
       };
 
       console.log('tracker data', trackerData);
-      // const cleanupListener = setupRealTimeListener();
       
-      // return cleanupListener; // Cleanup listener on component unmount
+      const cleanupListener = setupRealTimeListener();
+      
+      return cleanupListener; // Cleanup listener on component unmount
 
-      setupRealTimeListener();
   }, []); // Empty dependency array means this effect runs only once
 
   // Adjust map to include all markers
@@ -255,20 +255,6 @@ const App = () => {
           <Text>Loading map...</Text>
         </View>
       )}
-
-      {/* Tracker Details */}
-      {/* <View style={styles.details}>
-        {trackerData ? (
-          <>
-            <Text>Tracker: {trackerData.Ident}</Text>
-            <Text>Latitude: {trackerData.PositionLatitude}</Text>
-            <Text>Longitude: {trackerData.PositionLongitude}</Text>
-            <Text>Speed: {trackerData.PositionSpeed} km/h</Text>
-          </>
-        ) : (
-          <Text>Waiting for data...</Text>
-        )}
-      </View> */}
 
       {/* Sidebar */}
       <Sidebar isVisible={sidebarVisible} onClose={() => setSidebarVisible(false)} />

@@ -5,8 +5,9 @@ import {
   FlatList,
   TouchableOpacity,
   Button,
-  Alert,
+  ToastAndroid,
   StyleSheet,
+  Alert,
 } from "react-native";
 import Sidebar from "../components/Sidebar";
 import Icon from "react-native-vector-icons/Ionicons";
@@ -76,7 +77,7 @@ const ClockSetting: React.FC = () => {
       }));
       setIntervals(formattedIntervals);
     } catch (error) {
-      Alert.alert("Error", "Failed to fetch intervals. Please try again.");
+      ToastAndroid.show("Failed to fetch intervals. Please try again.", ToastAndroid.BOTTOM);
     }
   };
 
@@ -132,7 +133,7 @@ const ClockSetting: React.FC = () => {
       setModalVisible(false);
     } catch (error) {
       console.error(`Error updating timer with ID ${newInterval.id}:`, error.response?.data || error.message);
-      Alert.alert("Error", "Failed to save the interval. Please try again.");
+      ToastAndroid.show("Failed to save the interval. Please try again.", ToastAndroid.BOTTOM);
     }
   };
   

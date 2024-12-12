@@ -11,7 +11,7 @@ import {
   Platform,
   Dimensions,
   StyleSheet,
-  Alert,
+  ToastAndroid,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
@@ -31,7 +31,7 @@ const LoginScreen = () => {
   // Handle login form submission
   const handleLogin = async () => {
     if (!username || !password) {
-      Alert.alert("Error", "Please fill in both username and password.");
+      ToastAndroid.show("Please fill in both username and password.", ToastAndroid.BOTTOM);
       return;
     }
   
@@ -44,13 +44,12 @@ const LoginScreen = () => {
       router.push("/(tabs)/dispatch");
       console.log("Successfully Logged In:", userData);
     } catch (error) {
-      Alert.alert("Login Error", error.message || "Invalid credentials, please try again.");
+      ToastAndroid.show("Invalid credentials, please try again.", ToastAndroid.BOTTOM);
     } finally {
       setLoading(false);
     }
   };
   
-
 
   return (
     <KeyboardAvoidingView
