@@ -58,74 +58,79 @@ const App = () => {
     },
   ];
 
-  // Handle incoming event data
-  const handleEvent = (event: any) => {
-    console.log("Real-time Data Received:", event);
-
-    // Check if event.data exists and is an object
-    if (event && event.location) {
-      const { tracker_ident, location, timestamp, dispatch_log } = event;
-
-      // Check if location data is available and valid
-      if (location && location.latitude && location.longitude) {
-        // Update path with new coordinates
-        setPath((prevPath) => [
-          ...prevPath,
-          {
-            latitude: location.latitude,
-            longitude: location.longitude,
-          },
-        ]);
-
-        // Update trackerData with the latest data
-        setTrackerData({
-          tracker_ident,
-          location,
-          timestamp,
-          dispatch_log,
-        });
-
-        // Update bus icon based on dispatch_log status
-        if (dispatch_log) {
-          if (dispatch_log.status === 'on road') {
-            setBusIcon(require("../../assets/images/bus_on_road.png"));
-          } else if (dispatch_log.status === 'on alley') {
-            setBusIcon(require("../../assets/images/bus_on_alley.png"));
-          }
-        } else {
-          // If dispatch_log is null, set bus to idle
-          setBusIcon(require("../../assets/images/bus_idle.png"));
-        }
-      } else {
-        // Clear tracker data if no valid location is available
-        setTrackerData(null);
-      }
-    } else {
-      // Handle the case where event.data is empty or undefined
-      console.warn("Invalid or empty data received:", event);
-      setTrackerData(null);
-    }
-  };
-
-  // Function to setup real-time listener
-  const setupRealTimeListener = () => {
-    const channel = echo.channel("flespi-data");
-
-    // Listen for the "FlespiDataReceived" event and handle incoming data
-    channel.listen("FlespiDataReceived", handleEvent);
-
-    // Return cleanup function to stop the listener and disconnect
-    return () => {
-      console.log("Cleaning up listener...");
-      channel.stopListening("FlespiDataReceived");
-      echo.disconnect();
-    };
-  };
-
   // Set up listener when the component mounts
   useEffect(() => {
-    const cleanupListener = setupRealTimeListener();
-    return cleanupListener; // Cleanup listener on component unmount
+
+    // Function to setup real-time listener
+    const setupRealTimeListener = () => {
+      const channel = echo.channel("flespi-data");
+
+      // Handle incoming event data
+    const handleEvent = (event: any) => {
+      console.log("Real-time Data Received:", event);
+
+        // Check if event.data exists and is an object
+        if (event && event.location) {
+          const { tracker_ident, location, timestamp, dispatch_log } = event;
+
+          // Check if location data is available and valid
+          if (location && location.latitude && location.longitude) {
+            // Update path with new coordinates
+            setPath((prevPath) => [
+              ...prevPath,
+              {
+                latitude: location.latitude,
+                longitude: location.longitude,
+              },
+            ]);
+
+            // Update trackerData with the latest data
+            setTrackerData({
+              tracker_ident,
+              location,
+              timestamp,
+              dispatch_log,
+            });
+
+            // Update bus icon based on dispatch_log status
+            if (dispatch_log) {
+              if (dispatch_log.status === 'on road') {
+                setBusIcon(require("../../assets/images/bus_on_road.png"));
+              } else if (dispatch_log.status === 'on alley') {
+                setBusIcon(require("../../assets/images/bus_on_alley.png"));
+              }
+            } else {
+              // If dispatch_log is null, set bus to idle
+              setBusIcon(require("../../assets/images/bus_idle.png"));
+            }
+          } else {
+            // Clear tracker data if no valid location is available
+            setTrackerData(null);
+          }
+        } else {
+          // Handle the case where event.data is empty or undefined
+          console.warn("Invalid or empty data received:", event);
+          setTrackerData(null);
+        }
+      };
+
+      // Listen for the "FlespiDataReceived" event and handle incoming data
+      channel.listen("FlespiDataReceived", handleEvent);
+
+      // Return cleanup function to stop the listener and disconnect
+      return () => {
+        console.log("Cleaning up listener...");
+        channel.stopListening("FlespiDataReceived");
+        echo.disconnect();
+      };
+    };
+
+    console.log('tracker data', trackerData);
+    // const cleanupListener = setupRealTimeListener();
+    
+    // return cleanupListener; // Cleanup listener on component unmount
+
+    setupRealTimeListener();
   }, []); // Empty dependency array means this effect runs only once
 
   // Adjust map to include all markers
@@ -167,7 +172,6 @@ const App = () => {
   };
 
   const handleAlleyConfirm = () => {
-    handleEvent();
     console.log("Alley has confirmed");
     setSelectedBus(null);
   };
@@ -188,178 +192,186 @@ const App = () => {
 
   const onRefresh = async () => {
     setRefreshing(true);
+    // setRenderMap(false);
     if (busListRef.current) {
       busListRef.current.refreshData();
     }
+    // setTimeout(() => {
+    //   setRenderMap(true);
+    //   setPath([]); // Clear the path if necessary
+    //   setRefreshing(false);
+    // }, 5000); // Hide the map for 5 seconds
+
     setRefreshing(false);
   };
 
   return (
-    <SwipeToRefresh refreshing={refreshing} onRefresh={onRefresh}>
-      <View style={styles.container}>
-        {/* Map with Real-Time Marker and Polyline */}
-        {renderMap ? (
-          <MapView
-            key={mapKey}
-            ref={mapRef}
-            provider={PROVIDER_GOOGLE}
-            style={styles.map}
-            region={{
-              latitude: trackerData?.location?.latitude || 0,
-              longitude: trackerData?.location?.longitude || 0,
-              latitudeDelta: 0.005,
-              longitudeDelta: 0.005,
-            }}
-          >
-            {/* Polyline for the trail */}
-            <Polyline
-              coordinates={path}
-              strokeWidth={3}
-              strokeColor="blue"
+    <View style={styles.container}>
+      {/* Map with Real-Time Marker and Polyline */}
+      {renderMap ? (
+        <MapView
+          key={mapKey}
+          // ref={mapRef}
+          provider={PROVIDER_GOOGLE}
+          style={styles.map}
+          region={{
+            latitude: trackerData?.location?.latitude || 0,
+            longitude: trackerData?.location?.longitude || 0,
+            latitudeDelta: 0.005,
+            longitudeDelta: 0.005,
+          }}
+        >
+          {/* Polyline for the trail */}
+          {/* <Polyline
+            coordinates={path}
+            strokeWidth={3}
+            strokeColor="blue"
+          /> */}
+
+          {/* Dynamic bus marker */}
+          {trackerData?.location && (
+            <Marker
+              coordinate={trackerData.location}
+              title={`BUS ${trackerData.tracker_ident || "Tracker"}`}
+              description={`Speed: ${trackerData.location.speed || 0} km/h`}
+              icon={busIcon} // Dynamically changing the icon
             />
-
-            {/* Dynamic bus marker */}
-            {trackerData && trackerData.location && (
-              <Marker
-                coordinate={trackerData.location}
-                title={`BUS ${trackerData.tracker_ident}`}
-                description={`Speed: ${trackerData.location.speed} km/h`}
-                icon={busIcon} // Dynamically changing the icon
-              />
-            )}
-
-            {/* Static Markers with Custom Icons */}
-            {locations.map((location) => (
-              <Marker
-                key={location.id}
-                coordinate={location.coordinate}
-                title={location.title}
-                icon={location.icon} // Custom icon for each location
-              />
-            ))}
-          </MapView>
-        ) : (
-          // Show a loading state while waiting for the map to render
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#007bff" />
-            <Text>Loading map...</Text>
-          </View>
-        )}
-
-        {/* Tracker Details */}
-        {/* <View style={styles.details}>
-          {trackerData ? (
-            <>
-              <Text>Tracker: {trackerData.Ident}</Text>
-              <Text>Latitude: {trackerData.PositionLatitude}</Text>
-              <Text>Longitude: {trackerData.PositionLongitude}</Text>
-              <Text>Speed: {trackerData.PositionSpeed} km/h</Text>
-            </>
-          ) : (
-            <Text>Waiting for data...</Text>
           )}
-        </View> */}
 
-        {/* Sidebar */}
-        <Sidebar isVisible={sidebarVisible} onClose={() => setSidebarVisible(false)} />
-
-        {/* Header */}
-        <View style={styles.header}>
-          {!isHidden && ( // Conditionally render the menu icon and date
-            <>
-              <TouchableOpacity onPress={() => setSidebarVisible(!sidebarVisible)}>
-                <Icon name="menu" size={25} color="black" />
-              </TouchableOpacity>
-              <Text style={styles.date}>{currentDate}</Text>
-              <TouchableOpacity style={styles.histogramIcon} onPress={() => {router.push("/(tabs)/history")}}>
-                <Icon name="bar-chart-outline" size={25} color="black" />
-              </TouchableOpacity>
-            </>
-          )}
-          <TouchableOpacity onPress={toggleVisibility} style={styles.eyeIcon}>
-            <Icon name={isHidden ? "eye-outline" : "eye-off-outline"} size={25} color="black" />
-          </TouchableOpacity>
+          {/* Static Markers with Custom Icons */}
+          {locations.map((location) => (
+            <Marker
+              key={location.id}
+              coordinate={location.coordinate}
+              title={location.title}
+              icon={location.icon} // Custom icon for each location
+            />
+          ))}
+        </MapView>
+      ) : (
+        // Show a loading state while waiting for the map to render
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#007bff" />
+          <Text>Loading map...</Text>
         </View>
+      )}
 
-        {/* Free Space */}
-        <View style={styles.freeSpace} />
-
-        {/* Conditionally Render Components */}
-        {!isHidden && (
+      {/* Tracker Details */}
+      {/* <View style={styles.details}>
+        {trackerData ? (
           <>
-            {/* Swipeable Bus Status */}
-            <View style={styles.busContainer}>
-              <BusList
-                ref={busListRef}
-                selectedBus={selectedBus}
-                setSelectedBus={setSelectedBus}
-              />
-            </View>
+            <Text>Tracker: {trackerData.Ident}</Text>
+            <Text>Latitude: {trackerData.PositionLatitude}</Text>
+            <Text>Longitude: {trackerData.PositionLongitude}</Text>
+            <Text>Speed: {trackerData.PositionSpeed} km/h</Text>
+          </>
+        ) : (
+          <Text>Waiting for data...</Text>
+        )}
+      </View> */}
 
-            {/* Timer */}
-            <View style={styles.timerContainer}>
-              <Timer 
-                ref={timerRef}
-              />
-            </View>
+      {/* Sidebar */}
+      <Sidebar isVisible={sidebarVisible} onClose={() => setSidebarVisible(false)} />
+        
+      {/* Swipe Refresh */}
+      <SwipeToRefresh refreshing={refreshing} onRefresh={onRefresh} />
 
-            {/* Bottom Buttons */}
-            <View style={styles.bottomButtons}>
-              <TouchableOpacity
-                  style={[styles.button, styles.onAlleyButton]}
-                  onPress={() => {
-                    if (selectedBus) {
-                      setAlleyModalVisible(true); // Open DispatchModal only if a bus is selected
-                    } else {
-                      alert("Please select a bus first!");
-                    }
-                  }}
-                >
-                  <Text style={styles.buttonText}>Alley On</Text>
-                </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.button, styles.dispatchButton]}
+      {/* Header */}
+      <View style={styles.header}>
+        {!isHidden && ( // Conditionally render the menu icon and date
+          <>
+            <TouchableOpacity onPress={() => setSidebarVisible(!sidebarVisible)}>
+              <Icon name="menu" size={25} color="black" />
+            </TouchableOpacity>
+            <Text style={styles.date}>{currentDate}</Text>
+            <TouchableOpacity style={styles.histogramIcon} onPress={() => {router.push("/(tabs)/history")}}>
+              <Icon name="bar-chart-outline" size={25} color="black" />
+            </TouchableOpacity>
+          </>
+        )}
+        <TouchableOpacity onPress={toggleVisibility} style={styles.eyeIcon}>
+          <Icon name={isHidden ? "eye-outline" : "eye-off-outline"} size={25} color="black" />
+        </TouchableOpacity>
+      </View>
+
+      {/* Free Space */}
+      <View style={styles.freeSpace} />
+
+      {/* Conditionally Render Components */}
+      {!isHidden && (
+        <>
+          {/* Swipeable Bus Status */}
+          <View style={styles.busContainer}>
+            <BusList
+              ref={busListRef}
+              selectedBus={selectedBus}
+              setSelectedBus={setSelectedBus}
+            />
+          </View>
+
+          {/* Timer */}
+          <View style={styles.timerContainer}>
+            <Timer 
+              ref={timerRef}
+            />
+          </View>
+
+          {/* Bottom Buttons */}
+          <View style={styles.bottomButtons}>
+            <TouchableOpacity
+                style={[styles.button, styles.onAlleyButton]}
                 onPress={() => {
                   if (selectedBus) {
-                    setDispatchModalVisible(true); // Open DispatchModal only if a bus is selected
+                    setAlleyModalVisible(true); // Open DispatchModal only if a bus is selected
                   } else {
                     alert("Please select a bus first!");
                   }
                 }}
               >
-                <Text style={styles.buttonText}>Dispatch</Text>
+                <Text style={styles.buttonText}>Alley On</Text>
               </TouchableOpacity>
-            </View>
-          </>
-        )}
+            <TouchableOpacity
+              style={[styles.button, styles.dispatchButton]}
+              onPress={() => {
+                if (selectedBus) {
+                  setDispatchModalVisible(true); // Open DispatchModal only if a bus is selected
+                } else {
+                  alert("Please select a bus first!");
+                }
+              }}
+            >
+              <Text style={styles.buttonText}>Dispatch</Text>
+            </TouchableOpacity>
+          </View>
+        </>
+      )}
 
-        {/* Buttom Space */}
-        <View style={styles.buttomSpace} />
+      {/* Buttom Space */}
+      <View style={styles.buttomSpace} />
 
-        {/* Alley Modal */}
-        <AlleyModal
-          isVisible={alleyModalVisible}
-          onClose={() => setAlleyModalVisible(false)}
-          selectedBus={selectedBus}
-          onConfirm={() => {
-            handleAlleyConfirm();
-            handleRefresh();
-          }}
-        />
+      {/* Alley Modal */}
+      <AlleyModal
+        isVisible={alleyModalVisible}
+        onClose={() => setAlleyModalVisible(false)}
+        selectedBus={selectedBus}
+        onConfirm={() => {
+          handleAlleyConfirm();
+          handleRefresh();
+        }}
+      />
 
-        {/* Dispatch Modal */}
-        <DispatchModal
-          isVisible={dispatchModalVisible}
-          onClose={() => setDispatchModalVisible(false)}
-          selectedBus={selectedBus}
-          onConfirm={() => {
-            handleDispatchConfirm();
-            handleRefresh();
-          }}
-          timerRef={timerRef}
-        />
-      </View>
-    </SwipeToRefresh>
+      {/* Dispatch Modal */}
+      <DispatchModal
+        isVisible={dispatchModalVisible}
+        onClose={() => setDispatchModalVisible(false)}
+        selectedBus={selectedBus}
+        onConfirm={() => {
+          handleDispatchConfirm();
+          handleRefresh();
+        }}
+        timerRef={timerRef}
+      />
+    </View>
   );
 };
 
@@ -387,6 +399,9 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: 10, 
     top: 10,
+  },
+  freeSpace: {
+    flex: 1, 
   },
   map: {
     flex: 1,
@@ -416,9 +431,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "600",
     color: "#666",
-  },
-  freeSpace: {
-    flex: 1,
   },
   busContainer: {
     minHeight: "12%",

@@ -4,13 +4,11 @@ import { ScrollView, RefreshControl, StyleSheet, View } from "react-native";
 interface SwipeToRefreshProps {
   refreshing: boolean;
   onRefresh: () => void;
-  children: React.ReactNode;
 }
 
 const SwipeToRefresh: React.FC<SwipeToRefreshProps> = ({
   refreshing,
   onRefresh,
-  children,
 }) => {
   return (
     <ScrollView
@@ -19,18 +17,20 @@ const SwipeToRefresh: React.FC<SwipeToRefreshProps> = ({
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }
       nestedScrollEnabled
+      style={styles.scrollView}
     >
-      <View style={styles.content}>{children}</View>
     </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flexGrow: 1,
-  },
-  content: {
-    flex: 1,
+  scrollView: {
+    position: 'absolute',
+    top: 0,          
+    left: 0,         
+    right: 0,        
+    zIndex: 10,      
+    height: 60, 
   },
 });
 
