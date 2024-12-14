@@ -13,26 +13,28 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { logout } from "@/services/authentication/authServices";
 import { viewProfile } from "@/services/profile/profileServices";
 import renderImage from "@/constants/renderImage/renderImage";
+import { useFocusEffect } from "expo-router";
 
 const Sidebar = ({ isVisible, onClose }) => {
   const [profile, setProfile] = useState(null);
   const [activeMenu, setActiveMenu] = useState("/(tabs)/dispatch"); // Default active menu
   const router = useRouter();
 
-  useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const profileData = await viewProfile();
-        setProfile(profileData);
-      } catch (error) {
-        console.error("Error fetching profile:", error);
-      }
-    };
-
-    if (isVisible) {
+  useFocusEffect(
+    React.useCallback(() => {
+      const fetchProfile = async () => {
+        try {
+          const profileData = await viewProfile();
+          setProfile(profileData);
+        } catch (error) {
+          console.error("Error fetching profile:", error);
+        }
+      };
+  
       fetchProfile();
-    }
-  }, [isVisible]);
+  
+    }, [])
+  );
 
   useEffect(() => {
     // Retrieve the saved active menu from AsyncStorage on mount
@@ -51,6 +53,7 @@ const Sidebar = ({ isVisible, onClose }) => {
     // Cleanup function to clear the active menu on unmount
     return () => {
       AsyncStorage.removeItem("activeMenu");
+      setActiveMenu("/(tabs)/dispatch");
     };
   }, []);
   

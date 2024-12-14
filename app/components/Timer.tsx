@@ -1,8 +1,9 @@
-import React, { useState, useEffect, forwardRef, useImperativeHandle } from "react";
+import React, { useState, useEffect, forwardRef, useImperativeHandle, useCallback } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, Modal, Alert } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
 import { getAllTimers } from "@/services/timer/timersServices";
-import * as Notifications from "expo-notifications";
+import { useFocusEffect } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const Timer = forwardRef((props, ref) => {
   const [timer, setTimer] = useState(0); // Timer in seconds
@@ -15,33 +16,15 @@ const Timer = forwardRef((props, ref) => {
   useImperativeHandle(ref, () => ({
     startTimer: () => {
       if (selectedInterval) {
-        // setTimer(selectedInterval.minutesInterval * 60); // Reset timer based on selected interval
+        setTimer(selectedInterval.minutesInterval * 60); // Reset timer based on selected interval
         setIsRunning(true); // Start the timer
-        Notifications.scheduleNotificationAsync({
-          content: {
-            title: "Timer Complete!",
-            body: `The timer for ${selectedInterval?.title} is done.`,
-          },
-          trigger: null, // Trigger immediately
-        });
       }
     },
     stopTimer: () => {
       setIsRunning(false); // Stop the timer
-
-      // Send notification when the timer is stopped and reaches zero
-      if (timer === 0 && selectedInterval) {
-        Notifications.scheduleNotificationAsync({
-          content: {
-            title: "Timer Complete!",
-            body: `The timer for ${selectedInterval?.title} is done.`,
-          },
-          trigger: null, // Trigger immediately
-        });
-    }
-    
     },
     isRunning: () => isRunning, // Expose isRunning state
+    saveTimerState: saveTimerState, // Expose saveTimerState to the parent
   }));
 
   // Fetch interval data from API
@@ -59,7 +42,7 @@ const Timer = forwardRef((props, ref) => {
         // Set the default interval (e.g., first one)
         if (formattedIntervals.length > 0) {
           setSelectedInterval(formattedIntervals[0]);
-          setTimer(formattedIntervals[0].minutesInterval * 60); // Initialize timer
+          // Do NOT start the timer here, just initialize the selected interval
         }
       } catch (error) {
         Alert.alert("Error", "Failed to fetch intervals. Please try again.");
@@ -69,59 +52,74 @@ const Timer = forwardRef((props, ref) => {
     fetchIntervals();
   }, []);
 
-  // Request notification permissions on app load
+  // Update timer when interval changes but don't start the timer automatically
   useEffect(() => {
-    const requestPermission = async () => {
-      const { status } = await Notifications.requestPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert("Permission Required", "We need permission to send you notifications.");
-      }
-    };
-    requestPermission();
-  }, []);
+    if (selectedInterval && !isRunning) {
+      setTimer(selectedInterval.minutesInterval * 60); // Reset timer based on selected interval but don't start it
+    }
+  }, [selectedInterval, isRunning]);
 
   // Handle timer countdown
   useEffect(() => {
     let intervalId: NodeJS.Timeout | null = null;
-  
+
     if (isRunning) {
       intervalId = setInterval(() => {
         setTimer((prev) => {
           if (prev === 1) {
+            // Stop timer and reset to the selected interval
             setIsRunning(false); // Stop the timer
-            
-            // Send notification when the timer reaches zero
-            Notifications.scheduleNotificationAsync({
-              content: {
-                title: "Timer Complete!",
-                body: `The timer for ${selectedInterval?.title} is done.`,
-              },
-              trigger: null, // Trigger immediately
-            });
-  
-            if (selectedInterval) {
-              setTimer(selectedInterval.minutesInterval * 60); // Reset timer after the notification
-            }
-  
-            return 0;
+            return selectedInterval ? selectedInterval.minutesInterval * 60 : 0; // Reset timer
           }
           return prev - 1;
         });
       }, 1000);
     }
-  
+
     return () => {
       if (intervalId) clearInterval(intervalId);
     };
   }, [isRunning, timer, selectedInterval]);
-  
 
-  // Update timer when interval changes
-  useEffect(() => {
-    if (selectedInterval) {
-      setTimer(selectedInterval.minutesInterval * 60); // Reset timer when a new interval is selected
+  // Persist timer state to AsyncStorage
+  const saveTimerState = async () => {
+    if (isRunning) {
+      await AsyncStorage.setItem("timer", JSON.stringify({ timer, isRunning }));
+    } else {
+      // If the timer is not running, remove the state from AsyncStorage
+      await AsyncStorage.removeItem("timer");
     }
-  }, [selectedInterval]);
+  };
+
+  // Retrieve timer state from AsyncStorage
+  const loadTimerState = async () => {
+    try {
+      const savedTimerState = await AsyncStorage.getItem("timer");
+      if (savedTimerState) {
+        const { timer: savedTimer, isRunning: savedIsRunning } = JSON.parse(savedTimerState);
+        setTimer(savedTimer);
+        setIsRunning(savedIsRunning);
+      }
+    } catch (error) {
+      console.error("Failed to load timer state:", error);
+    }
+  };
+
+  // Use useFocusEffect to start the timer when screen is focused and restore state
+  useFocusEffect(
+    useCallback(() => {
+      loadTimerState(); // Load saved timer state when screen gains focus
+
+      // No cleanup function here, so the timer will continue running even when the screen is blurred
+    }, []) // Dependencies to trigger changes
+  );
+
+  // Save the timer state when component unmounts or loses focus
+  useEffect(() => {
+    return () => {
+      saveTimerState(); // Save the current state to AsyncStorage
+    };
+  }, [timer, isRunning]); // Dependencies to trigger saving the state
 
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
