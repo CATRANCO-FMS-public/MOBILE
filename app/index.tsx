@@ -11,11 +11,15 @@ export default function SplashScreen() {
   useEffect(() => {
     if (loading) return; // Wait until auth state is resolved
 
-    if (user) {
-      router.replace("/(tabs)/dispatch"); // Navigate to authenticated screen
-    } else {
-      router.replace("/auth/login"); // Navigate to login screen
-    }
+    const timeout = setTimeout(() => {
+      if (user) {
+        router.replace("/(tabs)/dispatch"); // Navigate to authenticated screen
+      } else {
+        router.replace("/auth/login"); // Navigate to login screen
+      }
+    }, 2000); // Delay of 2 seconds
+
+    return () => clearTimeout(timeout); // Cleanup timeout on component unmount
   }, [user, loading]);
 
   const { width, height } = Dimensions.get("window");

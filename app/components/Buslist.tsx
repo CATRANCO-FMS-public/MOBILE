@@ -55,7 +55,10 @@ const BusList = forwardRef(({ selectedBus, setSelectedBus }: BusListProps, ref) 
         };
       });
 
-      setBusData(transformedData);
+      // Sort by vehicle_id
+      const sortedData = transformedData.sort((a, b) => a.vehicle_id.localeCompare(b.vehicle_id));
+
+      setBusData(sortedData);
     } catch (error) {
       console.error('Error fetching vehicle assignments and dispatches:', error);
     }
@@ -71,6 +74,12 @@ const BusList = forwardRef(({ selectedBus, setSelectedBus }: BusListProps, ref) 
   }));
 
 
+  const getSelectedCardBorderColor = (status: string) => {
+    if (status === 'on alley') return '#FF6347';
+    if (status === 'on road') return '#3b82f6';
+    return 'black'; // Default border color
+  };
+
   return (
     <FlatList
       data={busData}
@@ -78,7 +87,14 @@ const BusList = forwardRef(({ selectedBus, setSelectedBus }: BusListProps, ref) 
       numColumns={2}
       renderItem={({ item }) => (
         <TouchableOpacity
-          style={[styles.busCard, { backgroundColor: item.color }, selectedBus?.vehicle_id === item.vehicle_id && styles.selectedBusCard]}
+          style={[
+            styles.busCard,
+            { backgroundColor: item.color },
+            selectedBus?.vehicle_id === item.vehicle_id && {
+              ...styles.selectedBusCard,
+              borderColor: getSelectedCardBorderColor(item.status),
+            },
+          ]}
           onPress={() => setSelectedBus({
             vehicle_id: item.vehicle_id,
             status: item.status,
@@ -108,7 +124,6 @@ const styles = StyleSheet.create({
   },
   selectedBusCard: {
     borderWidth: 2,
-    borderColor: "red",
   },
   busText: {
     fontWeight: "bold",

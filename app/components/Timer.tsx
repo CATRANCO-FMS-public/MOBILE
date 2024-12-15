@@ -4,6 +4,7 @@ import Icon from "react-native-vector-icons/Ionicons";
 import { getAllTimers } from "@/services/timer/timersServices";
 import { useFocusEffect } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Audio } from "expo-av";
 
 const Timer = forwardRef((props, ref) => {
   const [timer, setTimer] = useState(0); // Timer in seconds
@@ -11,6 +12,9 @@ const Timer = forwardRef((props, ref) => {
   const [intervals, setIntervals] = useState([]); // Available intervals
   const [selectedInterval, setSelectedInterval] = useState<any>(null); // Selected interval
   const [settingsVisible, setSettingsVisible] = useState(false);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [sound, setSound] = useState<Audio.Sound | null>(null);
+  const [isResetModalVisible, setIsResetModalVisible] = useState(false);
 
   // Expose functions to the parent component
   useImperativeHandle(ref, () => ({
@@ -25,7 +29,33 @@ const Timer = forwardRef((props, ref) => {
     },
     isRunning: () => isRunning, // Expose isRunning state
     saveTimerState: saveTimerState, // Expose saveTimerState to the parent
+    playSound: playSound,
+    resetTimer: resetTimer, // Expose playSound function to the parent
   }));
+
+  // Load the sound file
+  const playSound = async () => {
+    try {
+      const { sound } = await Audio.Sound.createAsync(
+        require("./../../assets/sound/timer_alarm.mp3") // Replace with your sound file path
+      );
+      setSound(sound);
+      await sound.playAsync();
+      await sound.setIsLoopingAsync(true);
+      setIsModalVisible(true); // Show the modal when the sound is playing
+    } catch (error) {
+      console.error("Error playing sound:", error);
+    }
+  };
+
+  // Unload sound when component unmounts
+  useEffect(() => {
+    return () => {
+      if (sound) {
+        sound.unloadAsync();
+      }
+    };
+  }, [sound]);
 
   // Fetch interval data from API
   useEffect(() => {
@@ -69,6 +99,7 @@ const Timer = forwardRef((props, ref) => {
           if (prev === 1) {
             // Stop timer and reset to the selected interval
             setIsRunning(false); // Stop the timer
+            playSound();
             return selectedInterval ? selectedInterval.minutesInterval * 60 : 0; // Reset timer
           }
           return prev - 1;
@@ -131,6 +162,37 @@ const Timer = forwardRef((props, ref) => {
     setSettingsVisible(!settingsVisible);
   };
 
+  const stopSound = () => {
+    if (sound) {
+      sound.stopAsync(); // Stop the sound
+      setIsModalVisible(false); // Close the modal
+    }
+  };
+
+  // Reset Timer
+  const resetTimer = () => {
+    setIsRunning(false);
+    if (selectedInterval) {
+      setTimer(selectedInterval.minutesInterval * 60); // Reset timer to the selected interval
+    }
+
+    setIsResetModalVisible(true);
+  };
+
+  // Function to confirm reset
+  const confirmReset = () => {
+    setIsRunning(false);
+    if (selectedInterval) {
+      setTimer(selectedInterval.minutesInterval * 60); // Reset timer to the selected interval
+    }
+    setIsResetModalVisible(false); // Hide the modal
+  };
+
+  // Function to cancel reset
+  const cancelReset = () => {
+    setIsResetModalVisible(false); // Hide the modal
+  };
+
   return (
     <View style={styles.container}>
       {selectedInterval && (
@@ -142,6 +204,11 @@ const Timer = forwardRef((props, ref) => {
 
       <TouchableOpacity onPress={toggleSettings} style={styles.settingsButton}>
         <Icon name="settings-outline" size={30} color="black" />
+      </TouchableOpacity>
+
+      {/* Reset Icon Button */}
+      <TouchableOpacity onPress={resetTimer} style={styles.resetButton}>
+        <Icon name="reload" size={30} color="black" />
       </TouchableOpacity>
 
       {/* Settings Modal */}
@@ -158,7 +225,7 @@ const Timer = forwardRef((props, ref) => {
               <TouchableOpacity
                 key={interval.id}
                 style={[
-                  styles.modalOption,
+                  styles.modalOption, {backgroundColor: 'rgba(46, 46, 41, 0.349)'},
                   selectedInterval?.id === interval.id && styles.selectedOption,
                 ]}
                 onPress={() => {
@@ -166,9 +233,48 @@ const Timer = forwardRef((props, ref) => {
                   toggleSettings(); // Close the modal
                 }}
               >
-                <Text style={styles.modalText}>{interval.title}</Text>
+                <Text style={[styles.modalText, {color: '#fff'}]}>{interval.title}</Text>
               </TouchableOpacity>
             ))}
+          </View>
+        </View>
+      </Modal>
+
+      {/* Stop Sound Modal */}
+      <Modal
+        transparent={true}
+        visible={isModalVisible}
+        animationType="fade"
+        onRequestClose={() => setIsModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalTitle}>Timer Finished</Text>
+            <TouchableOpacity onPress={stopSound} style={[styles.modalOption, {backgroundColor: '#FF6347'}]}>
+              <Text style={[styles.modalText, {color: '#fff'}]}>Stop Sound</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Reset Confirmation Modal */}
+      <Modal
+        transparent={true}
+        visible={isResetModalVisible}
+        animationType="fade"
+        onRequestClose={cancelReset}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalTitle}>Are you sure you want to reset the timer?</Text>
+            <View style={styles.resetButtonContainer}>
+              <TouchableOpacity onPress={confirmReset} style={[styles.modalOption, styles.resetButtonYes]}>
+                <Text style={[styles.modalText, { color: '#fff' }]}>Yes</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={cancelReset} style={[styles.modalOption, styles.resetButtonNo]}>
+                <Text style={[styles.modalText, { color: '#fff' }]}>No</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
@@ -210,6 +316,14 @@ const styles = StyleSheet.create({
     borderRadius: 50,
     backgroundColor: "#f7f7f7",
   },
+  resetButton: {
+    position: "absolute",
+    top: 30,
+    right: 30,
+    padding: 5,
+    backgroundColor: "#f7f7f7",
+    borderRadius: 50, 
+  },
   modalOverlay: {
     flex: 1,
     justifyContent: "center",
@@ -232,6 +346,22 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
     marginBottom: 15,
+  },
+  resetButtonContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 20,
+    width: "100%", // Ensure buttons span across the modal
+  },
+  resetButtonYes: {
+    flex: 1,
+    marginRight: 10, // Add spacing between the buttons
+    backgroundColor: "#4CAF50", // Example: green for "Yes"
+  },
+  resetButtonNo: {
+    flex: 1,
+    marginLeft: 10, // Add spacing between the buttons
+    backgroundColor: "#F44336", // Example: red for "No"
   },
   modalOption: {
     paddingVertical: 10,

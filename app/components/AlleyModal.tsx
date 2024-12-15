@@ -165,7 +165,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   optionButton: {
-    backgroundColor: "#ADFF2F",
+    backgroundColor: "#FFA500",
     paddingVertical: 10,
     paddingHorizontal: 15,
     borderRadius: 5,
@@ -190,16 +190,14 @@ const styles = StyleSheet.create({
     marginTop: 15,
   },
   cancelButton: {
-    backgroundColor: "white",
+    backgroundColor: "#FF6347",
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#FF6347",
     marginRight: 10,
   },
   dispatchButton: {
-    backgroundColor: "#6C63FF",
+    backgroundColor: "#3b82f6",
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 10,
@@ -208,7 +206,7 @@ const styles = StyleSheet.create({
   cancelText: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#FF6347",
+    color: "#FFF",
   },
   dispatchText: {
     fontSize: 16,

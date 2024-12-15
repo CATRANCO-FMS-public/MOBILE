@@ -4,7 +4,6 @@ import {
   Text,
   FlatList,
   TouchableOpacity,
-  Button,
   ToastAndroid,
   StyleSheet,
   Alert,
@@ -196,7 +195,12 @@ const ClockSetting: React.FC = () => {
         )}
       />
 
-      <Button title="Add New Interval" onPress={handleAddInterval} />
+      <TouchableOpacity 
+        style={styles.addButton} 
+        onPress={handleAddInterval}
+      >
+        <Text style={styles.addButtonText}>Add New Interval</Text>
+      </TouchableOpacity>
 
       <TouchableOpacity
         onPress={() => setSidebarVisible(!sidebarVisible)}
@@ -246,13 +250,13 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   editButton: {
-    backgroundColor: "#007bff",
+    backgroundColor: "#3b82f6",
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 5,
   },
   deleteButton: {
-    backgroundColor: "#dc3545",
+    backgroundColor: "#FF6347",
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 5,
@@ -262,6 +266,19 @@ const styles = StyleSheet.create({
   },
   deleteText: {
     color: "#fff",
+  },
+  addButton: {
+    backgroundColor: '#3b82f6', // Green background
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  addButtonText: {
+    color: '#fff', // White text
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   menuButton: {
     position: "absolute",

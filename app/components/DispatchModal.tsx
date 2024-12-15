@@ -34,27 +34,26 @@ const DispatchModal: React.FC<DispatchModalProps> = ({
         ToastAndroid.show("Cannot dispatch until the timer is completed.", ToastAndroid.BOTTOM);
         return;
       }
-
-      // Create an array of promises for both actions
-      const promises = [];
   
-      // If the bus is on alley, end the alley
+      // Ensure the vehicle is "on alley" before proceeding
       if (selectedBus.status === "on alley" && selectedBus.dispatch_logs_id) {
-        promises.push(endAlley(selectedBus.dispatch_logs_id));
-      }
+        // End the alley
+        await endAlley(selectedBus.dispatch_logs_id);
   
-      // If the bus is not on alley, start the dispatch
-      if (selectedBus.status !== "idle") {
+        // After successfully ending the alley, start the dispatch
         const data = {
           route: selectedOption,
           vehicle_assignment_id: selectedBus.vehicle_assignment_id,
         };
-        promises.push(startDispatch(data));
+        await startDispatch(data);
+      } else {
+        // Show a message if the vehicle isn't in "on alley" state
+        ToastAndroid.show(
+          "The bus must be on alley before it can be dispatched.",
+          ToastAndroid.BOTTOM
+        );
       }
   
-      // Wait for both promises to complete simultaneously
-      await Promise.all(promises);
-
       onConfirm(); // Reset the timer or handle any necessary state updates
       onClose(); // Close the modal
     } catch (error) {
@@ -192,7 +191,7 @@ const styles = StyleSheet.create({
     borderColor: "transparent", // Default border color
   },
   selectedOptionButton: {
-    borderColor: "red", // Red border for the selected option
+    borderColor: "#3b82f6", // Red border for the selected option
     borderWidth: 2,
   },
   optionText: {
@@ -208,16 +207,14 @@ const styles = StyleSheet.create({
     marginTop: 15,
   },
   cancelButton: {
-    backgroundColor: "white",
+    backgroundColor: "#FF6347",
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#FF6347",
     marginRight: 10,
   },
   dispatchButton: {
-    backgroundColor: "#6C63FF",
+    backgroundColor: "#3b82f6",
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 10,
@@ -226,7 +223,7 @@ const styles = StyleSheet.create({
   cancelText: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#FF6347",
+    color: "#FFF",
   },
   dispatchText: {
     fontSize: 16,

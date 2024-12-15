@@ -104,8 +104,12 @@ const TimerEdit: React.FC<TimerEditProps> = ({
             }
           />
           <View style={styles.buttonContainer}>
-            <Button title="Cancel" onPress={onCancel} color="gray" />
-            <Button title="Save Interval" onPress={() => onSave(interval)} />
+            <TouchableOpacity style={styles.cancelButton} onPress={onCancel}>
+              <Text style={styles.cancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.saveButton} onPress={() => onSave(interval)}>
+              <Text style={styles.saveButtonText}>Save Interval</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </View>
@@ -132,7 +136,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 20,
     textAlign: "center",
-    color: "red",
+    color: "black",
   },
   fieldLabel: {
     fontSize: 16,
@@ -151,6 +155,29 @@ const styles = StyleSheet.create({
   buttonContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
+  },
+  cancelButton: {
+    backgroundColor: '#FF6347',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 5,
+    alignItems: 'center',
+  },
+  cancelButtonText: {
+    color: '#fff',
+    fontSize: 16,
+  },
+  saveButton: {
+    backgroundColor: '#3b82f6', // Green color
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 5,
+    alignItems: 'center',
+  },
+  saveButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });
 
