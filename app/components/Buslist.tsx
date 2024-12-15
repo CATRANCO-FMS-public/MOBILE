@@ -15,10 +15,11 @@ interface BusData {
 
 interface BusListProps {
   selectedBus: { vehicle_id: string; status: string; vehicle_assignment_id: number; dispatch_logs_id: number | null } | null;
-  setSelectedBus: (bus: { vehicle_id: string; status: string; vehicle_assignment_id: number; dispatch_logs_id: number | null }) => void; // Update the setSelectedBus type
+  setSelectedBus: (bus: { vehicle_id: string; status: string; vehicle_assignment_id: number; dispatch_logs_id: number | null }) => void;
+  filter: string; // Add filter prop
 }
 
-const BusList = forwardRef(({ selectedBus, setSelectedBus }: BusListProps, ref) => {
+const BusList = forwardRef(({ selectedBus, setSelectedBus, filter }: BusListProps, ref) => {
   const [busData, setBusData] = useState<BusData[]>([]);
 
   const fetchAssignmentsAndDispatches = async () => {
@@ -73,6 +74,11 @@ const BusList = forwardRef(({ selectedBus, setSelectedBus }: BusListProps, ref) 
     refreshData: fetchAssignmentsAndDispatches,
   }));
 
+  // Filter buses based on selected filter
+  const filteredBusData = busData.filter((bus) => {
+    if (filter === 'all') return true;
+    return bus.status === filter;
+  });
 
   const getSelectedCardBorderColor = (status: string) => {
     if (status === 'on alley') return '#FF6347';
@@ -82,9 +88,9 @@ const BusList = forwardRef(({ selectedBus, setSelectedBus }: BusListProps, ref) 
 
   return (
     <FlatList
-      data={busData}
+      data={filteredBusData}
       keyExtractor={(item) => item.vehicle_id}
-      numColumns={2}
+      horizontal
       renderItem={({ item }) => (
         <TouchableOpacity
           style={[
@@ -95,12 +101,14 @@ const BusList = forwardRef(({ selectedBus, setSelectedBus }: BusListProps, ref) 
               borderColor: getSelectedCardBorderColor(item.status),
             },
           ]}
-          onPress={() => setSelectedBus({
-            vehicle_id: item.vehicle_id,
-            status: item.status,
-            vehicle_assignment_id: item.vehicle_assignment_id,
-            dispatch_logs_id: item.dispatch_logs_id,
-          })}
+          onPress={() =>
+            setSelectedBus({
+              vehicle_id: item.vehicle_id,
+              status: item.status,
+              vehicle_assignment_id: item.vehicle_assignment_id,
+              dispatch_logs_id: item.dispatch_logs_id,
+            })
+          }
         >
           <Icon name="bus" size={20} color="black" />
           <View style={{ flex: 1, flexDirection: "column" }}>
@@ -115,12 +123,12 @@ const BusList = forwardRef(({ selectedBus, setSelectedBus }: BusListProps, ref) 
 
 const styles = StyleSheet.create({
   busCard: {
-    margin: 7,
-    padding: 15,
+    margin: 6,
+    padding: 20,
     borderRadius: 10,
     flexDirection: "row",
     alignItems: "center",
-    width: "46.2%",
+    width: 175,
   },
   selectedBusCard: {
     borderWidth: 2,

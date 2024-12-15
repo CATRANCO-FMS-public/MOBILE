@@ -4,8 +4,7 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Modal,
-  ActivityIndicator
+  ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE  } from "react-native-maps";
@@ -14,6 +13,7 @@ import Sidebar from "../components/Sidebar";
 import DispatchModal from "../components/DispatchModal";
 import AlleyModal from "../components/AlleyModal";
 import echo from "../../constants/utils/pusherConfig"; 
+import RNPickerSelect from 'react-native-picker-select';
 import BusList from "../components/Buslist";
 import Timer from "../components/Timer";
 import SwipeToRefresh from "../components/Refresh";
@@ -22,6 +22,7 @@ import { useFocusEffect } from "expo-router";
 import { endDispatch } from "@/services/dispatch/dispatchServices";
 import SimulatedMarker from "../components/simulatedMarker";
 import { routeData } from "../components/routeData";
+
 
 const App = () => {
   const [sidebarVisible, setSidebarVisible] = useState(false);
@@ -40,6 +41,8 @@ const App = () => {
   const [mapKey, setMapKey] = useState(0);
   const timerRef = useRef(null);
   const busListRef = useRef(null);
+  const [filter, setFilter] = useState<string>('all');
+  
 
   // Static locations with custom marker designs
   const locations = [
@@ -276,6 +279,22 @@ const App = () => {
     setRefreshing(false);
   };
 
+  const filterOptions = [
+    { label: 'All', value: 'all' },
+    { label: 'Idle', value: 'idle' },
+    { label: 'On Alley', value: 'on alley' },
+    { label: 'On Road', value: 'on road' },
+  ];
+
+  const pickerStyles = {
+    inputAndroid: {
+      backgroundColor: filter === 'all' ? '#f7f7f7' : filter === 'idle' ? '#D3D3D3' : filter === 'on alley' ? 'rgba(255, 165, 0, 1)' : 'rgba(173, 255, 47, 1)', // Custom background based on selection
+    },
+    inputIOS: {
+      backgroundColor: '#f1f1f1',
+    },
+  };
+
   return (
     <View style={styles.container}>
       {/* Map with Real-Time Marker and Polyline */}
@@ -386,12 +405,22 @@ const App = () => {
       {/* Conditionally Render Components */}
       {!isHidden && (
         <>
+            <RNPickerSelect
+              onValueChange={(value) => setFilter(value)}  // Set filter value
+              items={filterOptions}
+              value={filter}  // Set the current value
+              style={pickerStyles}
+              placeholder={{}}
+            />
+
           {/* Swipeable Bus Status */}
           <View style={styles.busContainer}>
             <BusList
               ref={busListRef}
               selectedBus={selectedBus}
               setSelectedBus={setSelectedBus}
+              filter={filter} // Pass filter state to BusList
+              setFilter={setFilter} // Pass setFilter function to BusList if needed
             />
           </View>
 
@@ -519,8 +548,7 @@ const styles = StyleSheet.create({
     color: "#666",
   },
   busContainer: {
-    minHeight: "12%",
-    maxHeight: "24%",
+    height: "12%"
   },
   timerContainer:{
     marginBottom: 10,
@@ -552,5 +580,7 @@ const styles = StyleSheet.create({
     height: "2%",
   },
 });
+
+
 
 export default App;

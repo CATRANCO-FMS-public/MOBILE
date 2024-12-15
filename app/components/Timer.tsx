@@ -171,11 +171,6 @@ const Timer = forwardRef((props, ref) => {
 
   // Reset Timer
   const resetTimer = () => {
-    setIsRunning(false);
-    if (selectedInterval) {
-      setTimer(selectedInterval.minutesInterval * 60); // Reset timer to the selected interval
-    }
-
     setIsResetModalVisible(true);
   };
 
