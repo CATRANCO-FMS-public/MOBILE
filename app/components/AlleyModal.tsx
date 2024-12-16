@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity, Modal, StyleSheet, Alert } from "react-native";
+import { View, Text, TouchableOpacity, Modal, StyleSheet, Alert, ActivityIndicator } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
 import { startAlley } from "@/services/dispatch/dispatchServices";
 
@@ -17,12 +17,16 @@ const AlleyModal: React.FC<AlleyModalProps> = ({
   onConfirm,
 }) => {
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const handleOptionSelect = (option: string) => {
     setSelectedOption(option);
   };
 
   const handleConfirm = async () => {
+
+    setLoading(true);
+
     if (!selectedOption) {
       Alert.alert("Error", "Please select an alley to start.");
       return;
@@ -48,6 +52,8 @@ const AlleyModal: React.FC<AlleyModalProps> = ({
     } catch (error) {
       console.error("Error starting alley:", error);
       Alert.alert("Error", "Failed to start the alley. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -103,8 +109,13 @@ const AlleyModal: React.FC<AlleyModalProps> = ({
             <TouchableOpacity
               style={styles.dispatchButton}
               onPress={handleConfirm}
+              disabled={loading}
             >
-              <Text style={styles.dispatchText}>Confirm</Text>
+              {loading ? (
+                  <ActivityIndicator size="small" color="#FFF" />
+              ) : (
+                <Text style={styles.dispatchText}>Confirm</Text>
+              )}
             </TouchableOpacity>
           </View>
         </View>
@@ -202,6 +213,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     borderRadius: 10,
     marginLeft: 10,
+    width: 100,
+    justifyContent: "center",
+    alignItems: "center",
   },
   cancelText: {
     fontSize: 16,

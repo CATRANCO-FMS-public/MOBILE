@@ -3,6 +3,7 @@ import { FlatList, View, Text, TouchableOpacity, StyleSheet } from "react-native
 import Icon from "react-native-vector-icons/Ionicons";
 import { getVehicleAssignments } from "@/services/vehicle/vehicleServices";
 import { getAllDispatches } from "@/services/dispatch/dispatchServices";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 interface BusData {
   vehicle_id: string;
@@ -60,12 +61,30 @@ const BusList = forwardRef(({ selectedBus, setSelectedBus, filter }: BusListProp
       const sortedData = transformedData.sort((a, b) => a.vehicle_id.localeCompare(b.vehicle_id));
 
       setBusData(sortedData);
+
+       // Save data to AsyncStorage
+       await AsyncStorage.setItem("@busData", JSON.stringify(sortedData));
     } catch (error) {
       console.error('Error fetching vehicle assignments and dispatches:', error);
     }
   };
 
+  const loadCachedData = async () => {
+    try {
+      const cachedData = await AsyncStorage.getItem("@busData");
+      if (cachedData) {
+        setBusData(JSON.parse(cachedData));
+        console.log("Loaded data from AsyncStorage.");
+      }
+    } catch (error) {
+      console.error("Error loading cached data:", error);
+    }
+  };
+
   useEffect(() => {
+    // Load cached data first
+    loadCachedData();
+
     // Fetch immediately on mount
     fetchAssignmentsAndDispatches();
   }, []);

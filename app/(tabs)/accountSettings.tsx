@@ -9,6 +9,7 @@ import {
   ScrollView,
   Modal,
   ToastAndroid,
+  ActivityIndicator
 } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
 import Sidebar from "../components/Sidebar";
@@ -16,6 +17,7 @@ import { getUser, updateAccount } from "@/services/authentication/authServices";
 import { viewProfile } from "@/services/profile/profileServices";
 import { updateProfileImage, openImagePicker } from "@/services/profile/updateProfile";
 import renderImage from "@/constants/renderImage/renderImage";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const accountSettings = () => {
   // State for managing profile data
@@ -24,38 +26,50 @@ const accountSettings = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rePassword, setRePassword] = useState("");
-
-  // State to control the visibility of the sidebar
   const [isSidebarVisible, setSidebarVisible] = useState(false);
-  
-  // State for managing modal visibility (password change)
   const [isPasswordModalVisible, setPasswordModalVisible] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        // Fetch user data
-        // Fetch profile data
-        const profileData = await viewProfile();
-        
-        const userData = await getUser();
-        setUsername(userData.username);
-        setEmail(userData.email);
+        // Fetch user data from AsyncStorage (if available)
+        const storedProfileImage = await AsyncStorage.getItem('profileImage');
+        const storedUsername = await AsyncStorage.getItem('username');
+        const storedEmail = await AsyncStorage.getItem('email');
   
-        
-        console.log("Profile Data:", profileData);  // Log profile data
+        if (storedProfileImage) {
+          setProfileImage(storedProfileImage);
+        }
   
-        // Check if the profile image exists in the nested `profile` object
-        const userProfileImage = profileData.profile && profileData.profile.user_profile_image;
+        if (storedUsername) {
+          setUsername(storedUsername);
+        }
   
-        if (userProfileImage) {
-          // Construct the image URL
-          const imageUrl = `${renderImage}/${userProfileImage}?v=${new Date().getTime()}`;
-          setProfileImage(imageUrl);
-          console.log('profile image', imageUrl);
+        if (storedEmail) {
+          setEmail(storedEmail);  // Set email from AsyncStorage
         } else {
-          console.log("No profile image found.");
-          setProfileImage(null); // Fallback to null if no image
+          // Fetch fresh data if not found in AsyncStorage
+          const profileData = await viewProfile();
+          const userData = await getUser();
+          
+          console.log("User Data:", userData); // Log user data
+          
+          setUsername(userData.username);
+          setEmail(userData.email);  // Set email from fresh data
+  
+          const userProfileImage = profileData.profile && profileData.profile.user_profile_image;
+          if (userProfileImage) {
+            const imageUrl = `${renderImage}/${userProfileImage}?v=${new Date().getTime()}`;
+            setProfileImage(imageUrl);
+            await AsyncStorage.setItem('profileImage', imageUrl); // Store in AsyncStorage
+          } else {
+            setProfileImage(null);
+          }
+  
+          // Store username, email, and profile image in AsyncStorage for next use
+          await AsyncStorage.setItem('username', userData.username);
+          await AsyncStorage.setItem('email', userData.email);
         }
       } catch (error) {
         console.error("Error fetching user data:", error);
@@ -64,7 +78,8 @@ const accountSettings = () => {
     };
   
     fetchUserData();
-  }, []);  // Run only once when the component mounts
+  }, []);  
+  
   
   // Log when profileImage is updated (useful for debugging)
   useEffect(() => {
@@ -73,33 +88,36 @@ const accountSettings = () => {
     }
   }, [profileImage]);
 
+
   const handleSave = async () => {
+    setLoading(true);
     try {
       const updateData = {};
-  
-      // Check if email is provided and add it to updateData
+
       if (email) {
         updateData.email = email;
+        await AsyncStorage.setItem('email', email); // Save updated email to AsyncStorage
       }
-  
-      // If no changes were made (empty updateData), alert the user
+
       if (Object.keys(updateData).length === 0) {
         ToastAndroid.show("No changes were applied.", ToastAndroid.BOTTOM);
         return;
       }
-  
-      // Update account data using the API
-      await updateAccount(updateData);
 
-      ToastAndroid.show("Password updated successfully.", ToastAndroid.BOTTOM);
-      console.log("Update Data:", updateData);
+      await updateAccount(updateData);
+      ToastAndroid.show("Account updated successfully.", ToastAndroid.BOTTOM);
     } catch (error) {
       console.error("Error updating account:", error);
-      ToastAndroid.show("Email must be unique.", ToastAndroid.BOTTOM);
+      ToastAndroid.show("Error updating account.", ToastAndroid.BOTTOM);
+    } finally {
+      setLoading(false);
     }
   };
 
+  
   const handleDone = async () => {
+
+    setLoading(true);
     try {
       const updateData = {};
 
@@ -129,6 +147,8 @@ const accountSettings = () => {
     } catch (error) {
       console.error("Error updating account:", error);
       ToastAndroid.show("Failed to update account.", ToastAndroid.BOTTOM);
+    } finally {
+      setLoading(false);
     }
   };
   
@@ -145,15 +165,15 @@ const accountSettings = () => {
   };
 
   const handleImagePicker = async () => {
-    const imageUri = await openImagePicker(setProfileImage); // This should set the URI
+    const imageUri = await openImagePicker(setProfileImage);
     if (imageUri) {
-        console.log("Picked Image URI:", imageUri); // Log the URI to check
-        await updateProfileImage(imageUri); // Call the update API
-        ToastAndroid.show("Profile image updated successfully.", ToastAndroid.BOTTOM);
+      await updateProfileImage(imageUri);
+      await AsyncStorage.setItem('profileImage', imageUri); // Store new image in AsyncStorage
+      ToastAndroid.show("Profile image updated successfully.", ToastAndroid.BOTTOM);
     } else {
-        ToastAndroid.show("No image selected.", ToastAndroid.BOTTOM); // If no image selected
+      ToastAndroid.show("No image selected.", ToastAndroid.BOTTOM);
     }
-};
+  };
 
   return (
     <View style={styles.container}>
@@ -205,15 +225,20 @@ const accountSettings = () => {
           <TouchableOpacity
             onPress={handleSave}
             style={[styles.button, styles.saveButton]}
+            disabled={loading}
           >
-            <Text style={styles.buttonText}>Save</Text>
+            {loading ? (
+                <ActivityIndicator size="small" color="#FFF" />
+            ) : (
+              <Text style={styles.buttonText}>Save</Text>
+            )}
           </TouchableOpacity>
         </View>
       </ScrollView>
 
       {/* Sidebar toggle button */}
       <TouchableOpacity onPress={toggleSidebar} style={styles.menuButton}>
-        <Icon name="menu" size={30} color="black" />
+        <Icon name="menu" size={25} color="black" />
       </TouchableOpacity>
 
       {/* Password Change Modal */}
@@ -252,8 +277,13 @@ const accountSettings = () => {
               <TouchableOpacity
                 onPress={handleDone}
                 style={[styles.button, styles.saveButton]}
+                disabled={loading}
               >
-                <Text style={styles.buttonText}>Save</Text>
+                {loading ? (
+                    <ActivityIndicator size="small" color="#FFF" />
+                ) : (
+                  <Text style={styles.buttonText}>Save</Text>
+                )}
               </TouchableOpacity>
             </View>
           </View>
@@ -270,7 +300,7 @@ const styles = StyleSheet.create({
   },
   editProfileContainer: {
     marginTop: 80, // Adjust for sidebar
-    padding: 20,
+    padding: 25,
   },
   profilePicContainer: {
     alignItems: "center",
@@ -336,7 +366,7 @@ const styles = StyleSheet.create({
   },
   menuButton: {
     position: "absolute",
-    top: 30,
+    top: 20,
     left: 20,
   },
   changePasswordButton: {

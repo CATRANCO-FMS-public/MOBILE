@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity, Modal, StyleSheet, ToastAndroid } from "react-native";
+import { View, Text, TouchableOpacity, Modal, StyleSheet, ToastAndroid, ActivityIndicator } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
 import { startDispatch, endAlley } from "@/services/dispatch/dispatchServices"; // Import the services
 
@@ -118,7 +118,7 @@ const DispatchModal: React.FC<DispatchModalProps> = ({
               disabled={loading} // Disable button when loading
             >
               {loading ? (
-                <Text style={styles.dispatchText}>Processing...</Text>
+                  <ActivityIndicator size="small" color="#FFF" />
               ) : (
                 <Text style={styles.dispatchText}>Confirm</Text>
               )}
@@ -219,6 +219,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     borderRadius: 10,
     marginLeft: 10,
+    width: 100,
+    justifyContent: "center",
+    alignItems: "center",
   },
   cancelText: {
     fontSize: 16,

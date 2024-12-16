@@ -7,6 +7,7 @@ import {
   ToastAndroid,
   StyleSheet,
   Alert,
+  ActivityIndicator
 } from "react-native";
 import Sidebar from "../components/Sidebar";
 import Icon from "react-native-vector-icons/Ionicons";
@@ -17,6 +18,7 @@ import {
   updateTimer,
   deleteTimer,
 } from "@/services/timer/timersServices";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface Interval {
   id: string;
@@ -63,20 +65,33 @@ const ClockSetting: React.FC = () => {
     return `${hour}:${minute}`;
   };
 
-  // Fetch intervals from the API
+  // Fetch intervals from AsyncStorage or API
   const fetchIntervals = async () => {
+
+    setLoading(true);
     try {
-      const response = await getAllTimers();
-      const formattedIntervals = response.timers.map((timer: any) => ({
-        id: timer.timer_id,
-        name: timer.title,
-        startTime: formatTo12Hour(timer.start_time), 
-        endTime: formatTo12Hour(timer.end_time),     
-        timerLimit: timer.minutes_interval,
-      }));
-      setIntervals(formattedIntervals);
+      const storedIntervals = await AsyncStorage.getItem("intervals");
+      if (storedIntervals) {
+        // Parse intervals from AsyncStorage
+        setIntervals(JSON.parse(storedIntervals));
+      } else {
+        // Fetch from API if no intervals in AsyncStorage
+        const response = await getAllTimers();
+        const formattedIntervals = response.timers.map((timer: any) => ({
+          id: timer.timer_id,
+          name: timer.title,
+          startTime: formatTo12Hour(timer.start_time),
+          endTime: formatTo12Hour(timer.end_time),
+          timerLimit: timer.minutes_interval,
+        }));
+        setIntervals(formattedIntervals);
+        // Save fetched intervals to AsyncStorage
+        await AsyncStorage.setItem("intervals", JSON.stringify(formattedIntervals));
+      }
     } catch (error) {
       ToastAndroid.show("Failed to fetch intervals. Please try again.", ToastAndroid.BOTTOM);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -167,33 +182,40 @@ const ClockSetting: React.FC = () => {
         well as add new intervals.
       </Text>
 
-      <FlatList
-        data={intervals}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <View style={styles.intervalItem}>
-            <Text>{item.name}</Text>
-            <Text>
-              {item.startTime} - {item.endTime}
-            </Text>
-            <Text>Interval: {item.timerLimit} minutes</Text>
-            <View style={styles.buttonContainer}>
-              <TouchableOpacity
-                style={styles.editButton}
-                onPress={() => handleEditInterval(item.id)}
-              >
-                <Text style={styles.editText}>Edit</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.deleteButton}
-                onPress={() => handleDeleteInterval(item.id)}
-              >
-                <Text style={styles.deleteText}>Delete</Text>
-              </TouchableOpacity>
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#3b82f6" />
+          <Text>Loading intervals...</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={intervals}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            <View style={styles.intervalItem}>
+              <Text>{item.name}</Text>
+              <Text>
+                {item.startTime} - {item.endTime}
+              </Text>
+              <Text>Interval: {item.timerLimit} minutes</Text>
+              <View style={styles.buttonContainer}>
+                <TouchableOpacity
+                  style={styles.editButton}
+                  onPress={() => handleEditInterval(item.id)}
+                >
+                  <Text style={styles.editText}>Edit</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.deleteButton}
+                  onPress={() => handleDeleteInterval(item.id)}
+                >
+                  <Text style={styles.deleteText}>Delete</Text>
+                </TouchableOpacity>
+              </View>
             </View>
-          </View>
-        )}
-      />
+          )}
+        />
+      )}
 
       <TouchableOpacity 
         style={styles.addButton} 
@@ -206,7 +228,7 @@ const ClockSetting: React.FC = () => {
         onPress={() => setSidebarVisible(!sidebarVisible)}
         style={styles.menuButton}
       >
-        <Icon name="menu" size={30} color="black" />
+        <Icon name="menu" size={25} color="black" />
       </TouchableOpacity>
 
       <TimerEdit
@@ -224,7 +246,7 @@ const ClockSetting: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
+    padding: 25,
     backgroundColor: "#fff",
   },
   title: {
@@ -268,7 +290,7 @@ const styles = StyleSheet.create({
     color: "#fff",
   },
   addButton: {
-    backgroundColor: '#3b82f6', // Green background
+    backgroundColor: '#3b82f6',
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 5,
@@ -276,13 +298,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   addButtonText: {
-    color: '#fff', // White text
+    color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
   },
   menuButton: {
     position: "absolute",
-    top: 30,
+    top: 20,
     left: 20,
   },
   loadingContainer: {

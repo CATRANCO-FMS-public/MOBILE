@@ -21,6 +21,7 @@ const SimulatedMarker = ({ title, description, initialIcon, movingIcon, routeDat
             return prevIndex + 1;
           } else {
             clearInterval(intervalId);
+            resetMarker(); // Reset the marker when the route is complete
             return prevIndex;
           }
         });
@@ -35,6 +36,15 @@ const SimulatedMarker = ({ title, description, initialIcon, movingIcon, routeDat
       setIsMoving(true);
       setMarkerIcon(movingIcon);
     }
+  };
+
+  const resetMarker = () => {
+    // Reset all state variables to their initial values
+    setMarkerPosition(routeData[0]);
+    setPolylineCoordinates([routeData[0]]);
+    setCurrentIndex(0);
+    setIsMoving(false);
+    setMarkerIcon(initialIcon);
   };
 
   return (

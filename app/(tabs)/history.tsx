@@ -93,17 +93,31 @@ const History = () => {
         <html>
           <head>
             <style>
+              body {
+                margin: 10px; /* Reduced margin around the body */
+                font-family: Arial, sans-serif;
+              }
               table {
                 width: 100%;
                 border-collapse: collapse;
+                margin-top: 10px; /* Reduced space from the top */
               }
               th, td {
                 border: 1px solid black;
                 text-align: center;
-                padding: 8px;
+                padding: 6px; /* Reduced padding for compactness */
+                white-space: nowrap; /* Ensure content stays on one line */
               }
               th {
                 background-color: #f2f2f2;
+              }
+              h1 {
+                text-align: center;
+                margin-bottom: 15px; /* Reduced spacing below the heading */
+              }
+              @page {
+                size: A4; /* Ensure it prints on A4 paper size */
+                margin: 10mm; /* Reduced page margin */
               }
             </style>
           </head>

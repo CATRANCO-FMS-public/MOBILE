@@ -18,13 +18,18 @@ api.interceptors.request.use(async config => {
     return config;
 });
 
-// Function to fetch all timers
-export const getAllTimers = async () => {
+// Function to fetch paginated timers
+export const getAllTimers = async (perPage = 1, page = 1) => {
     try {
-        const response = await api.get('/user/dispatcher/timers/all');
-        return response.data;
+        const response = await api.get('/user/dispatcher/timers/all', {
+            params: {
+                per_page: perPage,
+                page: page,
+            },
+        });
+        return response.data; // Includes timers and metadata
     } catch (error) {
-        console.error('Error fetching all timers:', error); 
+        console.error('Error fetching timers:', error);
         throw error;
     }
 };

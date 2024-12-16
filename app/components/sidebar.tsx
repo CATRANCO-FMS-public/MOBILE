@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Dimensions,
   Image,
+  Modal
 } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
 import { useRouter } from "expo-router";
@@ -18,7 +19,9 @@ import { useFocusEffect } from "expo-router";
 const Sidebar = ({ isVisible, onClose }) => {
   const [profile, setProfile] = useState(null);
   const [activeMenu, setActiveMenu] = useState("/(tabs)/dispatch"); // Default active menu
+  const [imageUrl, setImageUrl] = useState(null);
   const router = useRouter();
+  const [isLogoutModalVisible, setLogoutModalVisible] = useState(false);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -26,13 +29,19 @@ const Sidebar = ({ isVisible, onClose }) => {
         try {
           const profileData = await viewProfile();
           setProfile(profileData);
+          // Save the profile image URL to AsyncStorage
+          if (profileData?.profile?.user_profile_image) {
+            await AsyncStorage.setItem(
+              "userProfileImage",
+              profileData.profile.user_profile_image
+            );
+          }
         } catch (error) {
           console.error("Error fetching profile:", error);
         }
       };
-  
+
       fetchProfile();
-  
     }, [])
   );
 
@@ -49,6 +58,18 @@ const Sidebar = ({ isVisible, onClose }) => {
       }
     };
     getActiveMenu();
+
+    const getProfileImage = async () => {
+      try {
+        const savedImage = await AsyncStorage.getItem("userProfileImage");
+        if (savedImage) {
+          setImageUrl(savedImage);
+        }
+      } catch (error) {
+        console.error("Error retrieving profile image:", error);
+      }
+    };
+    getProfileImage();
   
     // Cleanup function to clear the active menu on unmount
     return () => {
@@ -69,6 +90,10 @@ const Sidebar = ({ isVisible, onClose }) => {
   };
 
   const handleLogout = async () => {
+    setLogoutModalVisible(true); // Show the logout confirmation modal
+  };
+
+  const confirmLogout = async () => {
     try {
       await logout();
       await AsyncStorage.removeItem("activeMenu"); // Clear the active menu on logout
@@ -77,6 +102,11 @@ const Sidebar = ({ isVisible, onClose }) => {
     } catch (error) {
       console.error("Logout error:", error);
     }
+    setLogoutModalVisible(false); // Close the modal after logging out
+  };
+
+  const closeLogoutModal = () => {
+    setLogoutModalVisible(false); // Close the modal without logging out
   };
 
   return (
@@ -93,7 +123,7 @@ const Sidebar = ({ isVisible, onClose }) => {
             {profile?.profile?.user_profile_image ? (
               <Image
                 source={{
-                  uri: `${renderImage}/${profile.profile.user_profile_image}`,
+                  uri: `${renderImage}/${imageUrl}`,
                 }}
                 style={styles.profileImage}
               />
@@ -117,65 +147,120 @@ const Sidebar = ({ isVisible, onClose }) => {
               ]}
               onPress={() => handleMenuClick("/(tabs)/dispatch")}
             >
-              <Text
-                style={[
-                  styles.menuText,
-                  activeMenu === "/(tabs)/dispatch" && styles.activeMenuText,
-                ]}
-              >
-                Dispatch Management
-              </Text>
+              <View style={[styles.menuTextContainer, activeMenu === "/(tabs)/dispatch" && styles.activeMenuTextContainer]}>
+                <Icon
+                  name="navigate"
+                  size={20}
+                  color={activeMenu === "/(tabs)/dispatch" ? "#3b82f6" : "#333"}
+                  style={[styles.menuIcon, activeMenu === "/(tabs)/dispatch" && styles.activeMenuIcon]}
+                />
+                <Text
+                  style={[
+                    styles.menuText,
+                    activeMenu === "/(tabs)/dispatch" && styles.activeMenuText,
+                  ]}
+                >
+                  Dispatch Management
+                </Text>
+              </View>
             </TouchableOpacity>
 
             {/* Dispatch Setting */}
             <TouchableOpacity
               style={[
                 styles.menuItem,
-                activeMenu === "/(tabs)/DispatchSettings" &&
-                  styles.activeMenuItem,
+                activeMenu === "/(tabs)/DispatchSettings" && styles.activeMenuItem,
               ]}
               onPress={() => handleMenuClick("/(tabs)/DispatchSettings")}
             >
-              <Text
-                style={[
-                  styles.menuText,
-                  activeMenu === "/(tabs)/DispatchSettings" &&
-                    styles.activeMenuText,
-                ]}
-              >
-                Dispatch Setting
-              </Text>
+              <View style={[styles.menuTextContainer, activeMenu === "/(tabs)/DispatchSettings" && styles.activeMenuTextContainer]}>
+                <Icon
+                  name="settings"
+                  size={20}
+                  color={activeMenu === "/(tabs)/DispatchSettings" ? "#3b82f6" : "#333"}
+                  style={[styles.menuIcon, activeMenu === "/(tabs)/DispatchSettings" && styles.activeMenuIcon]}
+                />
+                <Text
+                  style={[
+                    styles.menuText,
+                    activeMenu === "/(tabs)/DispatchSettings" && styles.activeMenuText,
+                  ]}
+                >
+                  Dispatch Setting
+                </Text>
+              </View>
             </TouchableOpacity>
 
             {/* Profile Settings */}
             <TouchableOpacity
               style={[
                 styles.menuItem,
-                activeMenu === "/(tabs)/accountSettings" &&
-                  styles.activeMenuItem,
+                activeMenu === "/(tabs)/accountSettings" && styles.activeMenuItem,
               ]}
               onPress={() => handleMenuClick("/(tabs)/accountSettings")}
             >
-              <Text
-                style={[
-                  styles.menuText,
-                  activeMenu === "/(tabs)/accountSettings" &&
-                    styles.activeMenuText,
-                ]}
-              >
-                Account Settings
-              </Text>
+              <View style={[styles.menuTextContainer, activeMenu === "/(tabs)/accountSettings" && styles.activeMenuTextContainer]}>
+                <Icon
+                  name="person"
+                  size={20}
+                  color={activeMenu === "/(tabs)/accountSettings" ? "#3b82f6" : "#333"}
+                  style={[styles.menuIcon, activeMenu === "/(tabs)/accountSettings" && styles.activeMenuIcon]}
+                />
+                <Text
+                  style={[
+                    styles.menuText,
+                    activeMenu === "/(tabs)/accountSettings" && styles.activeMenuText,
+                  ]}
+                >
+                  Account Settings
+                </Text>
+              </View>
             </TouchableOpacity>
 
           </View>
-            {/* Logout */}
-            
-            <View style={styles.logoutContainer}>
-              <TouchableOpacity style={styles.menuItem} onPress={handleLogout}>
+
+          {/* Logout */}
+          <View style={styles.logoutContainer}>
+            <TouchableOpacity style={styles.menuItem} onPress={handleLogout}>
+              <View style={styles.menuTextContainer}>
+                <Icon
+                  name="log-out-outline"
+                  size={20}
+                  color="#333"
+                  style={styles.menuIcon}
+                />
                 <Text style={styles.menuText}>Logout</Text>
-              </TouchableOpacity>
+              </View>
+            </TouchableOpacity>
+          </View>
+
+          {/* Logout Confirmation Modal */}
+          <Modal
+            visible={isLogoutModalVisible}
+            transparent={true}
+            animationType="fade"
+            onRequestClose={closeLogoutModal}
+          >
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalContainer}>
+                <Text style={styles.modalTitle}>Are you sure you want to log out?</Text>
+                <View style={styles.resetButtonContainer}>
+                  <TouchableOpacity
+                    onPress={confirmLogout}
+                    style={[styles.modalOption, styles.resetButtonYes]}
+                  >
+                    <Text style={[styles.modalText, { color: "#fff" }]}>Yes</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={closeLogoutModal}
+                    style={[styles.modalOption, styles.resetButtonNo]}
+                  >
+                    <Text style={[styles.modalText, { color: "#fff" }]}>No</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
             </View>
-          
+          </Modal>
         </View>
       )}
     </>
@@ -237,24 +322,88 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#ddd",
   },
+  menuTextContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
   menuText: {
-    marginLeft: 20,
+    marginLeft: 10,
     fontSize: 16,
     color: "#333",
+  },
+  menuIcon: {
+    marginLeft: 15,
   },
   activeMenuItem: {
     backgroundColor: "#e0e0e0",
   },
+  activeMenuTextContainer: {
+    marginLeft: 15,
+  },
   activeMenuText: {
-    marginLeft: 35,
-    color: "#007BFF",
+    color: "#3b82f6",
     fontWeight: "bold",
   },
-  logoutContainer:{
+  activeMenuIcon: {
+    color: "#3b82f6",
+  },
+  logoutContainer: {
     flex: 1,
     borderTopWidth: 1,
     borderTopColor: "#ddd",
-  }
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  modalContainer: {
+    width: "80%",
+    backgroundColor: "white",
+    borderRadius: 15,
+    padding: 20,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 5,
+    elevation: 5,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 15,
+  },
+  resetButtonContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 20,
+    width: "100%",
+  },
+  resetButtonYes: {
+    flex: 1,
+    marginRight: 10,
+    backgroundColor: "#4CAF50", // Green for "Yes"
+  },
+  resetButtonNo: {
+    flex: 1,
+    marginLeft: 10,
+    backgroundColor: "#F44336", // Red for "No"
+  },
+  modalOption: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+    marginVertical: 5,
+    backgroundColor: "#f7f7f7",
+    width: "100%",
+    alignItems: "center",
+  },
+  modalText: {
+    fontSize: 16,
+    color: "black",
+  },
 });
 
 export default Sidebar;

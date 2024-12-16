@@ -358,13 +358,13 @@ const App = () => {
             routeData={routeData.canitoanToSilverCreek}
             />
 
-          <SimulatedMarker
-            title="BUS 003"
-            description="Simulated route for Bus 003"
-            initialIcon={require("../../assets/images/bus_on_alley.png")}
-            movingIcon={require("../../assets/images/bus_on_road.png")}
-            routeData={routeData.silverCreekToCogon}
-          />
+            <SimulatedMarker
+              title="BUS 003"
+              description="Simulated route for Bus 003"
+              initialIcon={require("../../assets/images/bus_on_alley.png")}
+              movingIcon={require("../../assets/images/bus_on_road.png")}
+              routeData={routeData.silverCreekToCogon}
+            />
 
         </MapView>
       ) : (

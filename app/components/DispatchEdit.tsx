@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Modal,
   TouchableOpacity,
+  ActivityIndicator
 } from "react-native";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 
@@ -29,6 +30,7 @@ const TimerEdit: React.FC<TimerEditProps> = ({
 }) => {
   const [isStartPickerVisible, setStartPickerVisible] = useState(false);
   const [isEndPickerVisible, setEndPickerVisible] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   // Format time in 12-hour format with AM/PM
   const formatTime12Hour = (date: Date) => {
@@ -51,6 +53,12 @@ const TimerEdit: React.FC<TimerEditProps> = ({
     const formattedTime = formatTime12Hour(date);
     onChange({ ...interval, endTime: formattedTime });
     setEndPickerVisible(false);
+  };
+
+  const handleSave = async () => {
+    setLoading(true); // Set loading state to true before saving
+    await onSave(interval); // Call the onSave function
+    setLoading(false); // Reset loading state after save is completed
   };
 
   return (
@@ -107,8 +115,16 @@ const TimerEdit: React.FC<TimerEditProps> = ({
             <TouchableOpacity style={styles.cancelButton} onPress={onCancel}>
               <Text style={styles.cancelButtonText}>Cancel</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.saveButton} onPress={() => onSave(interval)}>
-              <Text style={styles.saveButtonText}>Save Interval</Text>
+            <TouchableOpacity 
+              style={styles.saveButton} 
+              onPress={handleSave}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Text style={styles.saveButtonText}>Save Interval</Text>
+              )}
             </TouchableOpacity>
           </View>
         </View>
@@ -172,6 +188,8 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 5,
+    width: 135,
+    justifyContent: 'center',
     alignItems: 'center',
   },
   saveButtonText: {

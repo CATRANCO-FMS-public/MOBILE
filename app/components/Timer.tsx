@@ -215,12 +215,18 @@ const Timer = forwardRef((props, ref) => {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
+            {/* X Button to Close Modal */}
+            <TouchableOpacity onPress={toggleSettings} style={styles.closeButton}>
+              <Icon name="close" size={30} color="black" />
+            </TouchableOpacity>
+
             <Text style={styles.modalTitle}>Select Interval Type</Text>
             {intervals.map((interval: any) => (
               <TouchableOpacity
                 key={interval.id}
                 style={[
-                  styles.modalOption, {backgroundColor: 'rgba(46, 46, 41, 0.349)'},
+                  styles.modalOption,
+                  { backgroundColor: "rgba(46, 46, 41, 0.349)" },
                   selectedInterval?.id === interval.id && styles.selectedOption,
                 ]}
                 onPress={() => {
@@ -228,7 +234,9 @@ const Timer = forwardRef((props, ref) => {
                   toggleSettings(); // Close the modal
                 }}
               >
-                <Text style={[styles.modalText, {color: '#fff'}]}>{interval.title}</Text>
+                <Text style={[styles.modalText, { color: "#fff" }]}>
+                  {interval.title}
+                </Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -336,6 +344,14 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 5,
     elevation: 5,
+  },
+  closeButton: {
+    position: "absolute",
+    top: 10,
+    right: 10,
+    padding: 5,
+    backgroundColor: "#f7f7f7",
+    borderRadius: 50,
   },
   modalTitle: {
     fontSize: 18,
