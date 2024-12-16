@@ -273,7 +273,7 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     width: Dimensions.get("window").width * 0.6,
-    height: "110%",
+    height: Dimensions.get("window").height,
     backgroundColor: "#f5f5f5",
     zIndex: 1000,
     paddingTop: 40,
@@ -315,7 +315,7 @@ const styles = StyleSheet.create({
   },
   menuOptions: {
     marginTop: 20,
-    flex: 4,
+    flex: 3,
   },
   menuItem: {
     paddingVertical: 15,
