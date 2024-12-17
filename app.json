@@ -13,11 +13,6 @@
     },
     "android": {
       "icon": "./assets/images/catranco_logo.png",
-      "config": {
-        "googleMaps": {
-          "apiKey": "AIzaSyCh2BLbmWKz97jg9X-OTTTLf_DJzssw-W0"
-        }
-      },
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/catranco_logo.png",
         "backgroundColor": "#ffffff"
