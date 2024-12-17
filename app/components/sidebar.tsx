@@ -17,25 +17,25 @@ import renderImage from "@/constants/renderImage/renderImage";
 import { useFocusEffect } from "expo-router";
 
 const Sidebar = ({ isVisible, onClose }) => {
-  const [profile, setProfile] = useState(null);
+  const [username, setUsername] = useState(null);
   const [activeMenu, setActiveMenu] = useState("/(tabs)/dispatch"); // Default active menu
   const [imageUrl, setImageUrl] = useState(null);
-  const router = useRouter();
   const [isLogoutModalVisible, setLogoutModalVisible] = useState(false);
+  const router = useRouter();
 
   useFocusEffect(
     React.useCallback(() => {
       const fetchProfile = async () => {
         try {
           const profileData = await viewProfile();
-          setProfile(profileData);
-          // Save the profile image URL to AsyncStorage
           if (profileData?.profile?.user_profile_image) {
-            await AsyncStorage.setItem(
-              "userProfileImage",
-              profileData.profile.user_profile_image
-            );
+            const userProfileImage = profileData.profile.user_profile_image;
+            await AsyncStorage.setItem("userProfileImage", userProfileImage);
+            setImageUrl(userProfileImage);
           }
+          const username = profileData?.user?.username || "User";
+          await AsyncStorage.setItem("username", username);
+          setUsername(username);
         } catch (error) {
           console.error("Error fetching profile:", error);
         }
@@ -59,17 +59,22 @@ const Sidebar = ({ isVisible, onClose }) => {
     };
     getActiveMenu();
 
-    const getProfileImage = async () => {
+    const getProfileData = async () => {
       try {
         const savedImage = await AsyncStorage.getItem("userProfileImage");
+        const savedUsername = await AsyncStorage.getItem("username");
+
         if (savedImage) {
           setImageUrl(savedImage);
         }
+        if (savedUsername) {
+          setUsername(savedUsername);
+        }
       } catch (error) {
-        console.error("Error retrieving profile image:", error);
+        console.error("Error retrieving profile data:", error);
       }
     };
-    getProfileImage();
+    getProfileData();
   
     // Cleanup function to clear the active menu on unmount
     return () => {
@@ -120,7 +125,7 @@ const Sidebar = ({ isVisible, onClose }) => {
 
           {/* Profile Section */}
           <View style={styles.profileSection}>
-            {profile?.profile?.user_profile_image ? (
+             {imageUrl ? (
               <Image
                 source={{
                   uri: `${renderImage}/${imageUrl}`,
@@ -132,9 +137,7 @@ const Sidebar = ({ isVisible, onClose }) => {
                 <Icon name="person-circle-outline" size={50} color="gray" />
               </View>
             )}
-            <Text style={styles.profileName}>
-              {profile?.user?.username || "User"}
-            </Text>
+            <Text style={styles.profileName}>{username || "User"}</Text>
           </View>
 
           {/* Menu Options */}

@@ -12,8 +12,14 @@
       "supportsTablet": true
     },
     "android": {
+      "icon": "./assets/images/catranco_logo.png",
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyCh2BLbmWKz97jg9X-OTTTLf_DJzssw-W0"
+        }
+      },
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "foregroundImage": "./assets/images/catranco_logo.png",
         "backgroundColor": "#ffffff"
       },
       "permissions": [
@@ -52,7 +58,7 @@
         "origin": false
       },
       "eas": {
-        "projectId": "0a64cb62-9106-4119-9fe5-f9b8ca9989ab"
+        "projectId": "8d4c47c4-2250-4929-abca-9b6a23bff2f4"
       }
     }
   }

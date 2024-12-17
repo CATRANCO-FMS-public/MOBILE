@@ -73,7 +73,7 @@ const accountSettings = () => {
         }
       } catch (error) {
         console.error("Error fetching user data:", error);
-        ToastAndroid.show("Failed to fetch user data.", ToastAndroid.BOTTOM);
+        ToastAndroid.show("Add your email", ToastAndroid.BOTTOM);
       }
     };
   

@@ -60,7 +60,7 @@ export const updateAccount = async (userData) => {
 export const logout = async () => {
     try {
         await api.post('/user/logout');
-        await AsyncStorage.removeItem('authToken');
+        await AsyncStorage.clear();
     } catch (error) {
         console.error('Logout error:', error);
         throw error;

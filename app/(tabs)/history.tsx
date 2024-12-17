@@ -18,6 +18,7 @@ import { getAllDispatches } from "@/services/dispatch/dispatchServices";
 
 const History = () => {
   const [dispatchData, setDispatchData] = useState([]);
+  const [filteredDispatchData, setFilteredDispatchData] = useState([]);
   const [selectedDate, setSelectedDate] = useState(null);
   const [showCalendar, setShowCalendar] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -37,20 +38,21 @@ const History = () => {
           const pao = log.vehicle_assignments.user_profiles.find(
             (profile) => profile.position === "passenger_assistant_officer"
           );
-          return [
-            log.vehicle_assignments?.vehicle_id || "N/A",
-            log.start_time,
-            log.end_time || "N/A",
-            log.status,
-            log.route,
-            log.created_dispatch?.username || "N/A",
-            log.updated_dispatch?.username || "N/A",
-            driver?.last_name || "N/A",
-            pao?.last_name || "N/A",
-          ];
+          return {
+            vehicle_id: log.vehicle_assignments?.vehicle_id || "N/A",
+            start_time: log.start_time,
+            end_time: log.end_time || "N/A",
+            status: log.status,
+            route: log.route,
+            created_by: log.created_dispatch?.username || "N/A",
+            updated_by: log.updated_dispatch?.username || "N/A",
+            driver_last_name: driver?.last_name || "N/A",
+            pao_last_name: pao?.last_name || "N/A",
+            created_at: log.created_at,
+          };
         });
         setDispatchData(transformedData);
-        console.log("Dispatch Data:", dispatchData);
+        setFilteredDispatchData(transformedData); // Initially show all data
         setLoading(false);
       } catch (error) {
         Alert.alert("Error", "Failed to fetch dispatch logs.");
@@ -60,6 +62,15 @@ const History = () => {
 
     fetchData();
   }, []);
+
+  const handleDateSelect = (day) => {
+    setSelectedDate(day.dateString);
+    const filteredData = dispatchData.filter(
+      (dispatch) => dispatch.created_at.startsWith(day.dateString) // Match the date part of `created_at`
+    );
+    setFilteredDispatchData(filteredData);
+    setShowCalendar(false); // Close the calendar after selection
+  };
 
   const tableHead = [
     "Bus Number",
@@ -80,44 +91,43 @@ const History = () => {
       Alert.alert("Error", "Sharing is not available on this device.");
     }
   };
-  
 
   const handlePrint = async () => {
     try {
-      if (!dispatchData || dispatchData.length === 0) {
+      if (!filteredDispatchData || filteredDispatchData.length === 0) {
         Alert.alert("Error", "No data available to print.");
         return;
       }
-  
+
       const htmlContent = `
         <html>
           <head>
             <style>
               body {
-                margin: 10px; /* Reduced margin around the body */
+                margin: 10px;
                 font-family: Arial, sans-serif;
               }
               table {
                 width: 100%;
                 border-collapse: collapse;
-                margin-top: 10px; /* Reduced space from the top */
+                margin-top: 10px;
               }
               th, td {
                 border: 1px solid black;
                 text-align: center;
-                padding: 6px; /* Reduced padding for compactness */
-                white-space: nowrap; /* Ensure content stays on one line */
+                padding: 6px;
+                white-space: nowrap;
               }
               th {
                 background-color: #f2f2f2;
               }
               h1 {
                 text-align: center;
-                margin-bottom: 15px; /* Reduced spacing below the heading */
+                margin-bottom: 15px;
               }
               @page {
-                size: A4; /* Ensure it prints on A4 paper size */
-                margin: 10mm; /* Reduced page margin */
+                size: A4;
+                margin: 10mm;
               }
             </style>
           </head>
@@ -138,19 +148,19 @@ const History = () => {
                 </tr>
               </thead>
               <tbody>
-                ${dispatchData
+                ${filteredDispatchData
                   .map(
                     (row) => `
                   <tr>
-                    <td>${row[0]}</td>
-                    <td>${row[1]}</td>
-                    <td>${row[2]}</td>
-                    <td>${row[3]}</td>
-                    <td>${row[4]}</td>
-                    <td>${row[5]}</td>
-                    <td>${row[6]}</td>
-                    <td>${row[7]}</td>
-                    <td>${row[8]}</td>
+                    <td>${row.vehicle_id}</td>
+                    <td>${row.start_time}</td>
+                    <td>${row.end_time}</td>
+                    <td>${row.status}</td>
+                    <td>${row.route}</td>
+                    <td>${row.created_by}</td>
+                    <td>${row.updated_by}</td>
+                    <td>${row.driver_last_name}</td>
+                    <td>${row.pao_last_name}</td>
                   </tr>
                 `
                   )
@@ -160,11 +170,9 @@ const History = () => {
           </body>
         </html>
       `;
-  
-      // Create PDF
+
       const { uri } = await Print.printToFileAsync({ html: htmlContent });
       await sharePDF(uri);
-      // Alert with file location
       Alert.alert("PDF Created", `Your PDF file is saved at: ${uri}`);
     } catch (error) {
       console.error("Error generating PDF:", error);
@@ -212,10 +220,10 @@ const History = () => {
             </Table>
             <ScrollView style={styles.dataWrapper}>
               <Table borderStyle={styles.tableBorder}>
-                {dispatchData.map((rowData, index) => (
+                {filteredDispatchData.map((rowData, index) => (
                   <Row
                     key={index}
-                    data={rowData}
+                    data={Object.values(rowData)} // Mapping object to array of values
                     widthArr={widthArr}
                     style={[
                       styles.row,
@@ -242,10 +250,7 @@ const History = () => {
               markedDates={{
                 [selectedDate]: { selected: true, selectedColor: "blue" },
               }}
-              onDayPress={(day) => {
-                setSelectedDate(day.dateString);
-                setShowCalendar(false);
-              }}
+              onDayPress={handleDateSelect}
             />
             <TouchableOpacity
               style={styles.closeButton}
@@ -259,6 +264,7 @@ const History = () => {
     </View>
   );
 };
+
 
 const styles = StyleSheet.create({
   container: {

@@ -65,39 +65,59 @@ const ClockSetting: React.FC = () => {
     return `${hour}:${minute}`;
   };
 
-  // Fetch intervals from AsyncStorage or API
-  const fetchIntervals = async () => {
-
-    setLoading(true);
+  // Fetch intervals from AsyncStorage
+  const fetchStoredIntervals = async () => {
     try {
       const storedIntervals = await AsyncStorage.getItem("intervals");
       if (storedIntervals) {
         // Parse intervals from AsyncStorage
         setIntervals(JSON.parse(storedIntervals));
-      } else {
-        // Fetch from API if no intervals in AsyncStorage
-        const response = await getAllTimers();
-        const formattedIntervals = response.timers.map((timer: any) => ({
-          id: timer.timer_id,
-          name: timer.title,
-          startTime: formatTo12Hour(timer.start_time),
-          endTime: formatTo12Hour(timer.end_time),
-          timerLimit: timer.minutes_interval,
-        }));
-        setIntervals(formattedIntervals);
-        // Save fetched intervals to AsyncStorage
-        await AsyncStorage.setItem("intervals", JSON.stringify(formattedIntervals));
       }
     } catch (error) {
-      ToastAndroid.show("Failed to fetch intervals. Please try again.", ToastAndroid.BOTTOM);
+      console.error("Failed to fetch intervals from AsyncStorage", error);
+    }
+  };
+
+  // Fetch intervals from API
+  const fetchIntervalsFromAPI = async () => {
+    setLoading(true);
+    try {
+      const response = await getAllTimers();
+      const formattedIntervals = response.timers.map((timer: any) => ({
+        id: timer.timer_id,
+        name: timer.title,
+        startTime: formatTo12Hour(timer.start_time),
+        endTime: formatTo12Hour(timer.end_time),
+        timerLimit: timer.minutes_interval,
+      }));
+      setIntervals(formattedIntervals);
+      // Save fetched intervals to AsyncStorage
+      await AsyncStorage.setItem("intervals", JSON.stringify(formattedIntervals));
+    } catch (error) {
+      ToastAndroid.show("Failed to fetch intervals from API. Please try again.", ToastAndroid.BOTTOM);
     } finally {
       setLoading(false);
     }
   };
 
+  // Fetch intervals when the component mounts
   useEffect(() => {
-    fetchIntervals();
+    fetchStoredIntervals();
   }, []);
+
+  // If no intervals are in AsyncStorage, fetch from API
+  useEffect(() => {
+    if (intervals.length === 0) {
+      fetchIntervalsFromAPI();
+    }
+  }, [intervals]);
+
+  // Save updated intervals to AsyncStorage whenever intervals state changes
+  useEffect(() => {
+    if (intervals.length > 0) {
+      AsyncStorage.setItem("intervals", JSON.stringify(intervals));
+    }
+  }, [intervals]);
 
   const handleAddInterval = () => {
     setCurrentInterval({
@@ -143,7 +163,8 @@ const ClockSetting: React.FC = () => {
           minutes_interval: sanitizedInterval.timerLimit,
         });
       }
-      fetchIntervals();
+      
+      fetchIntervalsFromAPI();
       setModalVisible(false);
     } catch (error) {
       console.error(`Error updating timer with ID ${newInterval.id}:`, error.response?.data || error.message);
@@ -162,7 +183,13 @@ const ClockSetting: React.FC = () => {
           onPress: async () => {
             try {
               await deleteTimer(id);
-              setIntervals((prev) => prev.filter((interval) => interval.id !== id));
+              
+              // Filter out the deleted interval from the state
+              const updatedIntervals = intervals.filter((interval) => interval.id !== id);
+              setIntervals(updatedIntervals); // Update the state with the filtered intervals
+
+              // Save the updated intervals list back to AsyncStorage
+              await AsyncStorage.setItem("intervals", JSON.stringify(updatedIntervals));
             } catch (error) {
               Alert.alert("Error", "Failed to delete the interval. Please try again.");
             }

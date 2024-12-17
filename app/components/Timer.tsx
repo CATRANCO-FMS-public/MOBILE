@@ -5,6 +5,7 @@ import { getAllTimers } from "@/services/timer/timersServices";
 import { useFocusEffect } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Audio } from "expo-av";
+import * as Notifications from 'expo-notifications';
 
 const Timer = forwardRef((props, ref) => {
   const [timer, setTimer] = useState(0); // Timer in seconds
@@ -43,6 +44,7 @@ const Timer = forwardRef((props, ref) => {
       await sound.playAsync();
       await sound.setIsLoopingAsync(true);
       setIsModalVisible(true); // Show the modal when the sound is playing
+      sendNotification();
     } catch (error) {
       console.error("Error playing sound:", error);
     }
@@ -56,6 +58,18 @@ const Timer = forwardRef((props, ref) => {
       }
     };
   }, [sound]);
+
+  // Send a local notification when the timer finishes
+  const sendNotification = async () => {
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: "Timer Finished",
+        body: "Your timer has completed!",
+        sound: true,
+      },
+      trigger: null, // Immediate notification
+    });
+  };
 
   // Fetch interval data from API
   useEffect(() => {

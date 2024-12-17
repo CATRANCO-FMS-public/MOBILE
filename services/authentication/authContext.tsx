@@ -14,15 +14,25 @@ export const AuthProvider = ({ children }) => {
         const token = await AsyncStorage.getItem("authToken");
         if (token) {
           const userData = await getUser(); // Fetch user details from API
-          setUser(userData);
+  
+          // Check if the fetched user is valid
+          if (userData && userData.role_id === 2) { // Example: Validate role
+            setUser(userData);
+            await AsyncStorage.removeItem("activeMenu");
+          } else {
+            // Clear invalid token or user data
+            await AsyncStorage.removeItem("authToken");
+            setUser(null);
+          }
         }
       } catch (error) {
         console.error("Failed to fetch user data:", error);
+        setUser(null); // Ensure no user is set on error
       } finally {
-        setLoading(false);
+        setLoading(false); // Mark loading as complete
       }
     };
-
+  
     loadStorageData();
   }, []);
 

@@ -113,7 +113,6 @@ const LoginScreen = () => {
 
             {/* Login Button */}
             <TouchableOpacity
-              style={styles.loginButtonWrapper}
               onPress={handleLogin} // Call handleLogin function
               disabled={loading} // Disable button when loading
             >
@@ -164,7 +163,7 @@ const styles = StyleSheet.create({
   inputWrapper: {
     backgroundColor: "rgba(0, 0, 0, 0.1)",
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 16,
     borderRadius: 8,
     marginBottom: 16,
     flexDirection: "row", 
@@ -175,9 +174,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#000",
     width: "85%", 
-  },
-  eyeIconWrapper: {
-    padding: 8,
   },
   loginButtonWrapper: {
     width: "100%",
