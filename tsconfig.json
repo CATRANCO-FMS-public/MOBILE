@@ -3,16 +3,23 @@
   "compilerOptions": {
     "jsx": "react",
     "strict": true,
+    "noImplicitAny": true,  // Ensures no implicit 'any' type
+    "esModuleInterop": true,  // Helps with using JS libraries smoothly
     "paths": {
       "@/*": [
         "./*"
       ]
-    }
+    },
+    "typeRoots": [
+      "./node_modules/@types",  // Ensures proper type resolution from dependencies
+      "./types"  // If you have a custom types folder
+    ]
   },
   "include": [
     "**/*.ts",
     "**/*.tsx",
     ".expo/types/**/*.ts",
-    "expo-env.d.ts"
-, "babel.config.js"  ]
+    "expo-env.d.ts",
+    "babel.config.js"  // If Babel configuration is relevant to your build process
+  ]
 }

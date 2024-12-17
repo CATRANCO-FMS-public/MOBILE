@@ -31,10 +31,12 @@ const App = () => {
   const [alleyModalVisible, setAlleyModalVisible] = useState(false);
   const [selectedBus, setSelectedBus] = useState<{ vehicle_id: string; status: string } | null>(null);
   const [isHidden, setIsHidden] = useState(false); // To toggle visibility of components
-  const [trackerData, setTrackerData] = useState<any>(null);
-  const [path, setPath] = useState<{ latitude: number; longitude: number }[]>([]);
+  const [trackersData, setTrackersData] = useState([]);
+  const [paths, setPaths] = useState({});
+  const [busIcons, setBusIcons] = useState<{ [tracker_ident: string]: any }>({
+    "default": require("../../assets/images/bus_idle.png"),
+  });
   const [renderMap, setRenderMap] = useState(false);
-  const [busIcon, setBusIcon] = useState(require("../../assets/images/bus_idle.png"));
   const [refreshing, setRefreshing] = useState(false);
   const router = useRouter();
   const mapRef = useRef<MapView>(null);
@@ -71,25 +73,33 @@ const App = () => {
     React.useCallback(() => {
       const loadTrackerData = async () => {
         try {
-          const savedData = await AsyncStorage.getItem("trackerData");
-          if (savedData) {
-            setTrackerData(JSON.parse(savedData)); // Set state with saved data
+          const savedTrackerData = await AsyncStorage.getItem("trackersData");
+          if (savedTrackerData) {
+            const parsedTrackerData = JSON.parse(savedTrackerData);
+            setTrackersData(parsedTrackerData); // Set the state with saved trackers data
+          }
+
+          const savedBusIcons = await AsyncStorage.getItem("busIcons");
+          if (savedBusIcons) {
+            const parsedBusIcons = JSON.parse(savedBusIcons);
+            setBusIcons(parsedBusIcons); // Set the state with saved busIcons
           }
         } catch (error) {
           console.error("Error loading data from AsyncStorage", error);
         }
       };
-      
+
       loadTrackerData(); // Load data when screen is focused
 
       return () => {
         // Optional cleanup if necessary when screen is unfocused
       };
-    }, [])
+    }, []) // Empty dependency array means this effect runs when the screen is focused
   );
 
   // Set up listener when the component mounts
   useEffect(() => {
+    console.log('Running Real Timer Listener...')
     // Function to setup real-time listener
     const setupRealTimeListener = () => {
       const channel = echo.channel("flespi-data");
@@ -98,121 +108,147 @@ const App = () => {
       const handleEvent = async (event: any) => {
         console.log("Real-time Data Received:", event);
 
-          // Check if event.data exists and is an object
-          if (event && event.location) {
-            const { tracker_ident, vehicle_id, location, timestamp, dispatch_log } = event;
+        if (event && event.location) {
+          const { tracker_ident, vehicle_id, location, timestamp, dispatch_log } = event;
 
-            // Check if location data is available and valid
-            if (location && location.latitude && location.longitude) {
-              // Update path with new coordinates
-              setPath((prevPath) => [
-                ...prevPath,
-                {
-                  latitude: location.latitude,
-                  longitude: location.longitude,
-                },
-              ]);
-
-              // Update trackerData with the latest data
-              setTrackerData({
-                tracker_ident,
-                vehicle_id,
-                location,
-                timestamp,
-                dispatch_log,
-              });
-
-              // Save the tracker data to AsyncStorage
-              try {
-                await AsyncStorage.setItem(
-                  "trackerData",
-                  JSON.stringify({
-                    tracker_ident,
-                    vehicle_id,
-                    location,
-                    timestamp,
-                    dispatch_log,
-                  })
-                );
-              } catch (error) {
-                console.error("Error saving data to AsyncStorage", error);
-              }
-
-              // Check if the real-time data matches any predefined location
-              const matchedLocation = locations.find(
-                (loc) =>
-                  Math.abs(loc.coordinate.latitude - location.latitude) < 0.0001 &&
-                  Math.abs(loc.coordinate.longitude - location.longitude) < 0.0001
+          // Check if location data is available and valid
+          if (location && location.latitude && location.longitude) {
+            setTrackersData((prevTrackers) => {
+              // Check if tracker already exists
+              const existingTrackerIndex = prevTrackers.findIndex(
+                (tracker) => tracker.tracker_ident === tracker_ident
               );
 
-              if (matchedLocation && dispatch_log?.dispatch_logs_id) {
-                // Trigger endDispatch when the real-time location matches any static location
-                endDispatch(dispatch_log.dispatch_logs_id)
-                  .then(() => {
-                    console.log("Dispatch ended successfully");
-                    // Reset path after dispatch ends
-                    setPath([]); // Clear the path
-                  })
-                  .catch((error) => console.error("Error ending dispatch", error));
+              const updatedTrackers = [...prevTrackers];
+
+              if (existingTrackerIndex !== -1) {
+                // Update existing tracker
+                updatedTrackers[existingTrackerIndex] = {
+                  tracker_ident,
+                  vehicle_id,
+                  location,
+                  timestamp,
+                  dispatch_log,
+                };
+              } else {
+                // Add new tracker
+                updatedTrackers.push({
+                  tracker_ident,
+                  vehicle_id,
+                  location,
+                  timestamp,
+                  dispatch_log,
+                });
               }
+
+              // Save the updated state to AsyncStorage
+              (async () => {
+                try {
+                  const trackersDataString = JSON.stringify(updatedTrackers); // Correctly stringify updated state
+                  await AsyncStorage.setItem("trackersData", trackersDataString);
+                } catch (error) {
+                  console.error("Error saving trackers data to AsyncStorage", error);
+                }
+              })();
+
+              return updatedTrackers; // Return updated state
+            });
+
+            // Update path for this tracker
+            setPaths((prevPaths) => ({
+              ...prevPaths,
+              [tracker_ident]: [
+                ...(prevPaths[tracker_ident] || []),
+                { latitude: location.latitude, longitude: location.longitude },
+              ],
+            }));
+
+            // Check if the real-time data matches any predefined location
+            const matchedLocation = locations.find(
+              (loc) =>
+                Math.abs(loc.coordinate.latitude - location.latitude) < 0.0001 &&
+                Math.abs(loc.coordinate.longitude - location.longitude) < 0.0001
+            );
+
+            if (matchedLocation && dispatch_log?.dispatch_logs_id) {
+              // Trigger endDispatch when the real-time location matches any static location
+              endDispatch(dispatch_log.dispatch_logs_id)
+                .then(() => {
+                  console.log(`Dispatch ended successfully for tracker: ${tracker_ident}`);
+                  // Reset path after dispatch ends
+                  setPaths((prevPaths) => {
+                    const updatedPaths = { ...prevPaths };
+                    delete updatedPaths[tracker_ident]; // Clear path for this tracker
+                    return updatedPaths;
+                  });
+                })
+                .catch((error) =>
+                  console.error(`Error ending dispatch for tracker: ${tracker_ident}`, error)
+                );
+            }
 
               // Update bus icon based on dispatch_log status
               if (dispatch_log) {
-                if (dispatch_log.status === 'on road') {
-                  setBusIcon(require("../../assets/images/bus_on_road.png"));
-                } else if (dispatch_log.status === 'on alley') {
-                  setBusIcon(require("../../assets/images/bus_on_alley.png"));
+                let iconPath;
+
+                // Determine the icon path based on dispatch_log status
+                if (dispatch_log.status === "on road") {
+                  iconPath = require("../../assets/images/bus_on_road.png");
+                } else if (dispatch_log.status === "on alley") {
+                  iconPath = require("../../assets/images/bus_on_alley.png");
+                }
+
+                // If an icon path was determined, update busIcons state
+                if (iconPath) {
+                  setBusIcons((prevIcons) => {
+                    const updatedIcons = {
+                      ...prevIcons,
+                      [tracker_ident]: iconPath,
+                    };
+
+                    // Save updated busIcons to AsyncStorage
+                    AsyncStorage.setItem("busIcons", JSON.stringify(updatedIcons));
+                    return updatedIcons;
+                  });
                 }
               } else {
                 // If dispatch_log is null, set bus to idle
-                setBusIcon(require("../../assets/images/bus_idle.png"));
+                setBusIcons((prevIcons) => {
+                  const updatedIcons = {
+                    ...prevIcons,
+                    [tracker_ident]: require("../../assets/images/bus_idle.png"),
+                  };
+
+                  // Save updated busIcons to AsyncStorage
+                  AsyncStorage.setItem("busIcons", JSON.stringify(updatedIcons));
+                  return updatedIcons;
+                });
               }
-            } else {
-              // Clear tracker data if no valid location is available
-              setTrackerData(null);
-            }
           } else {
-            // Handle the case where event.data is empty or undefined
-            console.warn("Invalid or empty data received:", event);
-            setTrackerData(null);
+            console.warn(`Invalid location for tracker: ${tracker_ident}`);
           }
-        };
-
-        // Listen for the "FlespiDataReceived" event and handle incoming data
-        channel.listen("FlespiDataReceived", handleEvent);
-
-        // Return cleanup function to stop the listener and disconnect
-        return () => {
-          console.log("Cleaning up listener...");
-          channel.stopListening("FlespiDataReceived");
-          echo.disconnect();
-        };
+        } else {
+          console.warn("Invalid or empty data received:", event);
+        }
       };
 
-      console.log('tracker data', trackerData);
-      
-      const cleanupListener = setupRealTimeListener();
-      
-      return cleanupListener; // Cleanup listener on component unmount
+      // Listen for the "FlespiDataReceived" event and handle incoming data
+      channel.listen("FlespiDataReceived", handleEvent);
 
+      // Return cleanup function to stop the listener and disconnect
+      return () => {
+        console.log("Cleaning up listener...");
+        channel.stopListening("FlespiDataReceived");
+        echo.disconnect();
+      };
+    };
+
+    const cleanupListener = setupRealTimeListener();
+
+    return cleanupListener; // Cleanup listener on component unmount
   }, []); // Empty dependency array means this effect runs only once
 
-  // Adjust map to include all markers
-  useEffect(() => {
-    if (mapRef.current) {
-      const allCoordinates = [
-        ...locations.map((location) => location.coordinate),
-        ...(trackerData?.PositionLatitude && trackerData?.PositionLongitude
-          ? [{ latitude: trackerData.PositionLatitude, longitude: trackerData.PositionLongitude }]
-          : []),
-      ];
-      mapRef.current.fitToCoordinates(allCoordinates, {
-        edgePadding: { top: 10, right: 10, bottom: 10, left: 10 },
-        animated: true,
-      });
-    }
-  }, []);
-
+  
   const refreshTimeout = () => {
     const timeout = setTimeout(() => setRenderMap(true), 10000); // Adjust delay as needed
     return () => clearTimeout(timeout); // Cleanup the timeout on component unmount
@@ -271,8 +307,11 @@ const App = () => {
       busListRef.current.refreshData();
     }
     setTimeout(() => {
+      // Increment mapKey to trigger a re-render of the MapView
+      setMapKey((prevKey) => prevKey + 1);
+
       setRenderMap(true);
-      setPath([]); // Clear the path if necessary
+      // setPaths({}); // Clear the path if necessary
       setRefreshing(false);
     }, 5000); // Hide the map for 5 seconds
 
@@ -305,39 +344,49 @@ const App = () => {
           provider={PROVIDER_GOOGLE}
           style={styles.map}
           initialRegion={{
-            latitude: trackerData?.location?.latitude || 0,
-            longitude: trackerData?.location?.longitude || 0,
+            latitude: trackersData.length > 0 ? trackersData[0].location.latitude : 0,
+            longitude: trackersData.length > 0 ? trackersData[0].location.longitude : 0,
             latitudeDelta: 0.005,
             longitudeDelta: 0.005,
           }}
           onLayout={() => {
-            // Only animate to the marker when the map has been laid out
-            if (trackerData?.location) {
-              mapRef.current?.animateToRegion({
-                latitude: trackerData.location.latitude,
-                longitude: trackerData.location.longitude,
-                latitudeDelta: 0.005,
-                longitudeDelta: 0.005,
+            if (trackersData.length > 0 || locations.length > 0) {
+              // Combine all coordinates (static and dynamic)
+              const allCoordinates = [
+                ...locations.map((location) => location.coordinate), // Static locations
+                ...trackersData.map((tracker) => ({
+                  latitude: tracker.location.latitude,
+                  longitude: tracker.location.longitude,
+                })), // Dynamic tracker locations
+              ];
+        
+              // Adjust the map to fit all markers
+              mapRef.current?.fitToCoordinates(allCoordinates, {
+                edgePadding: { top: 10, right: 10, bottom: 10, left: 10 },
+                animated: true,
               });
             }
           }}
         >
-          {/* Polyline for the bus route */}
-          <Polyline
-            coordinates={path} // Bus route path
-            strokeWidth={3}
-            strokeColor="blue"
-          />
+          {/* Render a polyline and marker for each tracker */}
+          {trackersData.map((tracker) => (
+            <React.Fragment key={tracker.tracker_ident}>
+              {/* Polyline for the tracker route */}
+              <Polyline
+                coordinates={paths[tracker.tracker_ident] || []} // Path for this tracker
+                strokeWidth={3}
+                strokeColor="blue"
+              />
 
-          {/* Dynamic bus marker */}
-          {trackerData?.location && (
-            <Marker
-              coordinate={trackerData.location}
-              title={`BUS ${trackerData.vehicle_id || "Unknown"}`}
-              description={`Speed: ${trackerData.location.speed || 0} km/h`}
-              icon={busIcon} // Dynamically changing the icon
-            />
-          )}
+              {/* Marker for the tracker */}
+              <Marker
+                coordinate={tracker.location}
+                title={`BUS ${tracker.vehicle_id || "Unknown"}`}
+                description={`Speed: ${tracker.location.speed || 0} km/h`}
+                icon={busIcons[tracker.tracker_ident]} // Icon specific to the tracker
+              />
+            </React.Fragment>
+          ))}
 
           {/* Static Markers with Custom Icons */}
           {locations.map((location) => (

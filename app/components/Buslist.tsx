@@ -106,37 +106,43 @@ const BusList = forwardRef(({ selectedBus, setSelectedBus, filter }: BusListProp
   };
 
   return (
-    <FlatList
-      data={filteredBusData}
-      keyExtractor={(item) => item.vehicle_id}
-      horizontal
-      renderItem={({ item }) => (
-        <TouchableOpacity
-          style={[
-            styles.busCard,
-            { backgroundColor: item.color },
-            selectedBus?.vehicle_id === item.vehicle_id && {
-              ...styles.selectedBusCard,
-              borderColor: getSelectedCardBorderColor(item.status),
-            },
-          ]}
-          onPress={() =>
-            setSelectedBus({
-              vehicle_id: item.vehicle_id,
-              status: item.status,
-              vehicle_assignment_id: item.vehicle_assignment_id,
-              dispatch_logs_id: item.dispatch_logs_id,
-            })
-          }
-        >
-          <Icon name="bus" size={20} color="black" />
-          <View style={{ flex: 1, flexDirection: "column" }}>
-            <Text style={styles.busText}>{item.vehicle_id}</Text>
-            <Text style={styles.statusRouteText}>{`${item.route}\n| ${item.status}`} |</Text>
-          </View>
-        </TouchableOpacity>
+    <>
+      {filteredBusData.length > 0 ? (
+        <FlatList
+          data={filteredBusData}
+          keyExtractor={(item) => item.vehicle_id}
+          horizontal
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              style={[
+                styles.busCard,
+                { backgroundColor: item.color },
+                selectedBus?.vehicle_id === item.vehicle_id && {
+                  ...styles.selectedBusCard,
+                  borderColor: getSelectedCardBorderColor(item.status),
+                },
+              ]}
+              onPress={() =>
+                setSelectedBus({
+                  vehicle_id: item.vehicle_id,
+                  status: item.status,
+                  vehicle_assignment_id: item.vehicle_assignment_id,
+                  dispatch_logs_id: item.dispatch_logs_id,
+                })
+              }
+            >
+              <Icon name="bus" size={20} color="black" />
+              <View style={{ flex: 1, flexDirection: "column" }}>
+                <Text style={styles.busText}>{item.vehicle_id}</Text>
+                <Text style={styles.statusRouteText}>{`${item.route}\n| ${item.status}`} |</Text>
+              </View>
+            </TouchableOpacity>
+          )}
+        />
+      ) : (
+        <Text style={styles.noBusesText}>No Vehicles Available...</Text>
       )}
-    />
+    </>
   );
 });
 
@@ -162,6 +168,12 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontStyle: 'italic',
     color: "#000",
+  },
+  noBusesText: {
+    textAlign: 'center',
+    fontSize: 18,
+    color: 'black',
+    marginTop: 20,
   },
 });
 
