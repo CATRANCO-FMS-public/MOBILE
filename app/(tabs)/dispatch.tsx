@@ -51,22 +51,44 @@ const App = () => {
     {
       id: 1,
       title: "Canitoan",
-      coordinate: { latitude: 8.4663228, longitude: 124.5853069 },
-      icon: require("../../assets/images/canitoan.png"), // Replace with your custom icon
+      primaryCoordinate: { latitude: 8.4663228, longitude: 124.5853069 }, // Marker coordinate
+      coordinates: [
+        { latitude: 8.4663228, longitude: 124.5853069 },
+        { latitude: 8.4662452, longitude: 124.5852767 },
+        { latitude: 8.4661616, longitude: 124.5852413 },
+        { latitude: 8.466295, longitude: 124.585346 },
+        { latitude: 8.466283, longitude: 124.585379 },
+      ],
+      icon: require("../../assets/images/canitoan.png"),
     },
     {
       id: 2,
       title: "Silver Creek",
-      coordinate: { latitude: 8.475946, longitude: 124.6120194 },
-      icon: require("../../assets/images/silver_creek.png"), // Replace with your custom icon
+      primaryCoordinate: { latitude: 8.475946, longitude: 124.6120194 },
+      coordinates: [
+        { latitude: 8.475946, longitude: 124.6120194 },
+        { latitude: 8.475959, longitude: 124.6119225 },
+        { latitude: 8.4759729, longitude: 124.6118273 },
+        { latitude: 8.4759855, longitude: 124.6117332 },
+        { latitude: 8.475996, longitude: 124.6116395 },
+      ],
+      icon: require("../../assets/images/silver_creek.png"),
     },
     {
       id: 3,
       title: "Cogon",
-      coordinate: { latitude: 8.4759094, longitude: 124.6514315 },
-      icon: require("../../assets/images/cogon.png"), // Replace with your custom icon
+      primaryCoordinate: { latitude: 8.4758845, longitude: 124.650698 },
+      coordinates: [
+        { latitude: 8.4758845, longitude: 124.650698 },
+        { latitude: 8.4759746, longitude: 124.6507055 },
+        { latitude: 8.4760674, longitude: 124.6507123 },
+        { latitude: 8.4761608, longitude: 124.6507218 },
+        { latitude: 8.475870, longitude: 124.650668 },
+        { latitude: 8.475803, longitude: 124.650662 },
+      ],
+      icon: require("../../assets/images/cogon.png"),
     },
-  ];
+  ];  
 
   // Load data from AsyncStorage when the component mounts or the screen is focused
   useFocusEffect(
@@ -163,11 +185,13 @@ const App = () => {
               ],
             }));
 
-            // Check if the real-time data matches any predefined location
-            const matchedLocation = locations.find(
-              (loc) =>
-                Math.abs(loc.coordinate.latitude - location.latitude) < 0.0001 &&
-                Math.abs(loc.coordinate.longitude - location.longitude) < 0.0001
+            // Check if the real-time data matches any coordinate in the coverage area
+            const matchedLocation = locations.find((loc) =>
+              loc.coordinates.some(
+                (coord) =>
+                  Math.abs(coord.latitude - location.latitude) < 0.0001 &&
+                  Math.abs(coord.longitude - location.longitude) < 0.0001
+              )
             );
 
             if (matchedLocation && dispatch_log?.dispatch_logs_id) {
@@ -392,7 +416,7 @@ const App = () => {
           {locations.map((location) => (
             <Marker
               key={location.id}
-              coordinate={location.coordinate}
+              coordinate={location.primaryCoordinate} // Use primaryCoordinate for the marker
               title={location.title}
               icon={location.icon} // Custom icon for each location
             />

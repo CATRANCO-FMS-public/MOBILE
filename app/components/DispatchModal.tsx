@@ -93,7 +93,7 @@ const DispatchModal: React.FC<DispatchModalProps> = ({
 
           {/* Dispatch Options */}
           <View style={styles.dispatchOptions}>
-            {["Cogon", "Canitoan", "Silver Creek"].map((option) => (
+            {["Canitoan", "Silver Creek", "Cogon"].map((option) => (
               <TouchableOpacity
                 key={option}
                 style={[

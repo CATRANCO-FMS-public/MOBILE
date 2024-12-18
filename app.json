@@ -18,7 +18,8 @@
         "backgroundColor": "#ffffff"
       },
       "permissions": [
-        "android.permission.RECORD_AUDIO"
+        "android.permission.RECORD_AUDIO",
+        "android.permission.POST_NOTIFICATIONS"
       ],
       "package": "com.khenpaler.TransitTrackapp"
     },
@@ -43,6 +44,13 @@
         {
           "photosPermission": "The app accesses your photos to let you share them with your friends."
         }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/catranco_logo.png",
+          "color": "#ffffff"
+        }
       ]
     ],
     "experiments": {
@@ -53,7 +61,7 @@
         "origin": false
       },
       "eas": {
-        "projectId": "8d4c47c4-2250-4929-abca-9b6a23bff2f4"
+        "projectId": "37424bc5-2a7f-4e1a-8013-5c87ae432867"
       }
     }
   }
