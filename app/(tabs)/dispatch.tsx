@@ -39,11 +39,16 @@ const App = () => {
   const [renderMap, setRenderMap] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const router = useRouter();
-  const mapRef = useRef<MapView>(null);
   const [mapKey, setMapKey] = useState(0);
   const timerRef = useRef(null);
   const busListRef = useRef(null);
   const [filter, setFilter] = useState<string>('all');
+  const [initialRegion, setInitialRegion] = useState({
+    latitude: 0,
+    longitude: 0,
+    latitudeDelta: 0.01,
+    longitudeDelta: 0.01,
+  });
   
 
   // Static locations with custom marker designs
@@ -333,7 +338,7 @@ const App = () => {
     setTimeout(() => {
       // Increment mapKey to trigger a re-render of the MapView
       setMapKey((prevKey) => prevKey + 1);
-
+      setPaths({});
       setRenderMap(true);
       // setPaths({}); // Clear the path if necessary
       setRefreshing(false);
@@ -358,39 +363,38 @@ const App = () => {
     },
   };
 
+  useEffect(() => {
+    if (locations.length > 0) {
+      // Get all latitude and longitude values from static locations
+      const latitudes = locations.map((loc) => loc.primaryCoordinate.latitude);
+      const longitudes = locations.map((loc) => loc.primaryCoordinate.longitude);
+
+      // Calculate the center point of all static locations
+      const minLatitude = Math.min(...latitudes);
+      const maxLatitude = Math.max(...latitudes);
+      const minLongitude = Math.min(...longitudes);
+      const maxLongitude = Math.max(...longitudes);
+
+      // Update initial region
+      setInitialRegion({
+        latitude: (minLatitude + maxLatitude) / 2, // Center latitude
+        longitude: (minLongitude + maxLongitude) / 2, // Center longitude
+        latitudeDelta: maxLatitude - minLatitude + 0.01, // Small padding
+        longitudeDelta: maxLongitude - minLongitude + 0.01, // Small padding
+      });
+    }
+  }, []); // Run whenever `locations` changes
+  
+
   return (
     <View style={styles.container}>
       {/* Map with Real-Time Marker and Polyline */}
       {renderMap ? (
           <MapView
           key={mapKey}
-          ref={mapRef}
           provider={PROVIDER_GOOGLE}
           style={styles.map}
-          initialRegion={{
-            latitude: trackersData.length > 0 ? trackersData[0].location.latitude : 0,
-            longitude: trackersData.length > 0 ? trackersData[0].location.longitude : 0,
-            latitudeDelta: 0.005,
-            longitudeDelta: 0.005,
-          }}
-          onLayout={() => {
-            if (trackersData.length > 0 || locations.length > 0) {
-              // Combine all coordinates (static and dynamic)
-              const allCoordinates = [
-                ...locations.map((location) => location.coordinate), // Static locations
-                ...trackersData.map((tracker) => ({
-                  latitude: tracker.location.latitude,
-                  longitude: tracker.location.longitude,
-                })), // Dynamic tracker locations
-              ];
-        
-              // Adjust the map to fit all markers
-              mapRef.current?.fitToCoordinates(allCoordinates, {
-                edgePadding: { top: 10, right: 10, bottom: 10, left: 10 },
-                animated: true,
-              });
-            }
-          }}
+          initialRegion={initialRegion}
         >
           {/* Render a polyline and marker for each tracker */}
           {trackersData.map((tracker) => (
