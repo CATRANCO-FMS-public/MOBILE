@@ -84,12 +84,18 @@ const App = () => {
       title: "Cogon",
       primaryCoordinate: { latitude: 8.4758845, longitude: 124.650698 },
       coordinates: [
-        { latitude: 8.4758845, longitude: 124.650698 },
         { latitude: 8.4759746, longitude: 124.6507055 },
         { latitude: 8.4760674, longitude: 124.6507123 },
         { latitude: 8.4761608, longitude: 124.6507218 },
         { latitude: 8.475870, longitude: 124.650668 },
         { latitude: 8.475803, longitude: 124.650662 },
+        { latitude: 8.475654, longitude: 124.650639 },
+        { latitude: 8.475526, longitude: 124.650526 },
+        { latitude: 8.475603, longitude: 124.650023 },
+        { latitude: 8.475712, longitude: 124.650013 },
+        { latitude: 8.475821, longitude: 124.650023 },
+        { latitude: 8.476028, longitude: 124.650015 },
+        { latitude: 8.476889, longitude: 124.650006 },
       ],
       icon: require("../../assets/images/cogon.png"),
     },
@@ -198,22 +204,23 @@ const App = () => {
                   Math.abs(coord.longitude - location.longitude) < 0.0001
               )
             );
+            
+            console.log("Matched Location:", matchedLocation);
 
-            if (matchedLocation && dispatch_log?.dispatch_logs_id) {
-              // Trigger endDispatch when the real-time location matches any static location
+            if (matchedLocation && dispatch_log?.dispatch_logs_id && dispatch_log.status === "on road") {
+              console.log("Ending Dispatch for Matched Tracker:", tracker_ident);
               endDispatch(dispatch_log.dispatch_logs_id)
                 .then(() => {
                   console.log(`Dispatch ended successfully for tracker: ${tracker_ident}`);
-                  // Reset path after dispatch ends
                   setPaths((prevPaths) => {
                     const updatedPaths = { ...prevPaths };
                     delete updatedPaths[tracker_ident]; // Clear path for this tracker
                     return updatedPaths;
                   });
                 })
-                .catch((error) =>
-                  console.error(`Error ending dispatch for tracker: ${tracker_ident}`, error)
-                );
+                .catch((error) => {
+                  console.error(`Error ending dispatch for tracker: ${tracker_ident}`, error.response || error.message);
+                });
             }
 
               // Update bus icon based on dispatch_log status
@@ -427,7 +434,7 @@ const App = () => {
           ))}
 
           {/* Simulated Marker */}
-            <SimulatedMarker
+            {/* <SimulatedMarker
             title="BUS 002"
             description="Simulated route for Bus 002"
             initialIcon={require("../../assets/images/bus_on_alley.png")}
@@ -441,7 +448,7 @@ const App = () => {
               initialIcon={require("../../assets/images/bus_on_alley.png")}
               movingIcon={require("../../assets/images/bus_on_road.png")}
               routeData={routeData.silverCreekToCogon}
-            />
+            /> */}
 
         </MapView>
       ) : (

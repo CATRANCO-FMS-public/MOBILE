@@ -58,10 +58,32 @@ export const endAlley = async (id: number) => {
 // Service for ending a dispatch
 export const endDispatch = async (id: number) => {
   try {
-    const response = await api.patch(`/user/dispatch_logs/dispatch/end/${id}`);
+    const response = await api.patch(`/user/dispatcher/dispatch_logs/dispatch/end/${id}`);
     return response.data;
   } catch (error: any) {
     console.error("Error in endDispatch:", error); 
+    throw error.response?.data || error.message;
+  }
+};
+
+// Service for getting all on-alley dispatches
+export const getAllOnAlley = async () => {
+  try {
+    const response = await api.get('/user/dispatcher/dispatch_logs/alley');
+    return response.data;
+  } catch (error: any) {
+    console.error("Error in getAllOnAlley:", error);
+    throw error.response?.data || error.message;
+  }
+};
+
+// Service for getting all on-road dispatches
+export const getAllOnRoad = async () => {
+  try {
+    const response = await api.get('/user/dispatcher/dispatch_logs/road');
+    return response.data;
+  } catch (error: any) {
+    console.error("Error in getAllOnRoad:", error);
     throw error.response?.data || error.message;
   }
 };

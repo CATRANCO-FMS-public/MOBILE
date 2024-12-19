@@ -3,7 +3,6 @@ import { LogBox } from "react-native";
 import { Stack } from "expo-router";
 import { AuthProvider } from "@/services/authentication/authContext";
 import { SafeAreaView } from "react-native-safe-area-context";
-import Toast from 'react-native-toast-message';
 
 export default function RootLayout() {
   LogBox.ignoreAllLogs();
@@ -15,7 +14,6 @@ export default function RootLayout() {
           <Stack.Screen name="index" />
           <Stack.Screen name="auth" />
           <Stack.Screen name="(tabs)" />
-          <Toast />
         </Stack>
       </SafeAreaView>
     </AuthProvider>

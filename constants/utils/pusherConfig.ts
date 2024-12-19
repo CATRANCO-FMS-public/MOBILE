@@ -7,7 +7,7 @@ global.Pusher = Pusher;
 // Initialize Echo
 const echo = new Echo({
   broadcaster: "pusher",
-  key: "97e12b5f39c1e3b65007", 
+  key: "1ef78a467e719c038548", 
   cluster: "ap1",
   encrypted: true,
   forceTLS: true, 

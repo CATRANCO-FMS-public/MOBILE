@@ -1,4 +1,4 @@
-export const routeData = {
+const routeData = {
     canitoanToSilverCreek: [
         { latitude: 8.4663228, longitude: 124.5853069 },
         { latitude: 8.4663551, longitude: 124.5853191 },
@@ -954,3 +954,5 @@ export const routeData = {
         { latitude: 8.4760674, longitude: 124.6507123  },
         ]
 };
+
+export default routeData;

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useImperativeHandle, forwardRef } from "rea
 import { FlatList, View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
 import { getVehicleAssignments } from "@/services/vehicle/vehicleServices";
-import { getAllDispatches } from "@/services/dispatch/dispatchServices";
+import { getAllOnAlley, getAllOnRoad } from "@/services/dispatch/dispatchServices"; // Update the import
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 interface BusData {
@@ -27,10 +27,16 @@ const BusList = forwardRef(({ selectedBus, setSelectedBus, filter }: BusListProp
     try {
       console.log('fetching data....');
       const vehicleAssignmentsResponse = await getVehicleAssignments();
-      const dispatchesResponse = await getAllDispatches();
+      
+      // Fetch on-alley and on-road dispatches separately
+      const onAlleyDispatches = await getAllOnAlley();
+      const onRoadDispatches = await getAllOnRoad();
+
+      // Combine the two dispatch data sets
+      const allDispatches = [...onAlleyDispatches, ...onRoadDispatches];
 
       // Filter out dispatches with 'alley_completed' status
-      const filteredDispatches = dispatchesResponse.filter((dispatch) => dispatch.status !== 'alley_completed');
+      const filteredDispatches = allDispatches.filter((dispatch) => dispatch.status !== 'alley_completed');
 
       const transformedData = vehicleAssignmentsResponse.map((assignment) => {
         const dispatch = filteredDispatches.find(
@@ -62,8 +68,8 @@ const BusList = forwardRef(({ selectedBus, setSelectedBus, filter }: BusListProp
 
       setBusData(sortedData);
 
-       // Save data to AsyncStorage
-       await AsyncStorage.setItem("@busData", JSON.stringify(sortedData));
+      // Save data to AsyncStorage
+      await AsyncStorage.setItem("@busData", JSON.stringify(sortedData));
     } catch (error) {
       console.error('Error fetching vehicle assignments and dispatches:', error);
     }
@@ -114,7 +120,7 @@ const BusList = forwardRef(({ selectedBus, setSelectedBus, filter }: BusListProp
           horizontal
           renderItem={({ item }) => (
             <TouchableOpacity
-              style={[
+              style={[ 
                 styles.busCard,
                 { backgroundColor: item.color },
                 selectedBus?.vehicle_id === item.vehicle_id && {
