@@ -224,7 +224,7 @@ const ClockSetting: React.FC = () => {
               <Text>
                 {item.startTime} - {item.endTime}
               </Text>
-              <Text>Interval: {item.timerLimit} minutes</Text>
+              <Text>Interval: {item.timerLimit} {item.timerLimit === 1 ? "minute" : "minutes"}</Text>
               <View style={styles.buttonContainer}>
                 <TouchableOpacity
                   style={styles.editButton}
