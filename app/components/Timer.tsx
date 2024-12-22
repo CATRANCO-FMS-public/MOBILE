@@ -31,7 +31,7 @@ const Timer = forwardRef((props, ref) => {
     isRunning: () => isRunning, // Expose isRunning state
     saveTimerState: saveTimerState, // Expose saveTimerState to the parent
     playSound: playSound,
-    resetTimer: resetTimer, // Expose playSound function to the parent
+    confirmReset: confirmReset, 
   }));
 
   // Load the sound file
@@ -139,6 +139,13 @@ const Timer = forwardRef((props, ref) => {
   // Retrieve timer state from AsyncStorage
   const loadTimerState = async () => {
     try {
+      const isReset = await AsyncStorage.getItem("timer_reset");
+      if (isReset === "true") {
+        // If the timer was reset, don't load any saved state
+        await AsyncStorage.removeItem("timer_reset"); // Clear the reset flag
+        return;
+      }
+  
       const savedTimerState = await AsyncStorage.getItem("timer");
       if (savedTimerState) {
         const { timer: savedTimer, isRunning: savedIsRunning } = JSON.parse(savedTimerState);
@@ -149,6 +156,7 @@ const Timer = forwardRef((props, ref) => {
       console.error("Failed to load timer state:", error);
     }
   };
+  
 
   // Use useFocusEffect to start the timer when screen is focused and restore state
   useFocusEffect(
@@ -189,12 +197,14 @@ const Timer = forwardRef((props, ref) => {
   };
 
   // Function to confirm reset
-  const confirmReset = () => {
+  const confirmReset = async () => {
     setIsRunning(false);
     if (selectedInterval) {
       setTimer(selectedInterval.minutesInterval * 60); // Reset timer to the selected interval
     }
     setIsResetModalVisible(false); // Hide the modal
+    await AsyncStorage.setItem("timer_reset", "true"); // Mark timer as reset
+    await AsyncStorage.removeItem("timer"); // Clear the timer state
   };
 
   // Function to cancel reset

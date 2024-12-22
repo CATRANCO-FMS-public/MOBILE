@@ -31,33 +31,39 @@ const DispatchModal: React.FC<DispatchModalProps> = ({
   
     try {
       if (timerRef?.current?.isRunning()) {
+        setLoading(false);
         ToastAndroid.show("Cannot dispatch until the timer is completed.", ToastAndroid.BOTTOM);
         return;
       }
   
       // Ensure the vehicle is "on alley" before proceeding
-      if (selectedBus.status === "on alley" && selectedBus.dispatch_logs_id) {
-        // End the alley
-        await endAlley(selectedBus.dispatch_logs_id);
-  
-        // After successfully ending the alley, start the dispatch
-        const data = {
-          route: selectedOption,
-          vehicle_assignment_id: selectedBus.vehicle_assignment_id,
-        };
-        await startDispatch(data);
-      } else {
-        // Show a message if the vehicle isn't in "on alley" state
+      if (selectedBus.status !== "on alley" || !selectedBus.dispatch_logs_id) {
+        setLoading(false);
         ToastAndroid.show(
           "The bus must be on alley before it can be dispatched.",
           ToastAndroid.BOTTOM
         );
+        return;
       }
   
-      onConfirm(); // Reset the timer or handle any necessary state updates
-      onClose(); // Close the modal
+      // End the alley
+      await endAlley(selectedBus.dispatch_logs_id);
+  
+      // Start the dispatch
+      const data = {
+        route: selectedOption,
+        vehicle_assignment_id: selectedBus.vehicle_assignment_id,
+      };
+      await startDispatch(data);
+  
+      onConfirm();
+      onClose();
     } catch (error) {
       console.error("Error handling dispatch confirm:", error);
+      ToastAndroid.show(
+        "An unexpected error occurred. Please try again later.",
+        ToastAndroid.BOTTOM
+      );
     } finally {
       setLoading(false);
     }

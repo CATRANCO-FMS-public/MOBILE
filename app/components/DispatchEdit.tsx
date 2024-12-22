@@ -7,7 +7,8 @@ import {
   StyleSheet,
   Modal,
   TouchableOpacity,
-  ActivityIndicator
+  ActivityIndicator,
+  ToastAndroid,
 } from "react-native";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 
@@ -31,17 +32,21 @@ const TimerEdit: React.FC<TimerEditProps> = ({
   const [isStartPickerVisible, setStartPickerVisible] = useState(false);
   const [isEndPickerVisible, setEndPickerVisible] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({
+    title: "",
+    startTime: "",
+    endTime: "",
+    minutesInterval: "",
+  });
 
-  // Format time in 12-hour format with AM/PM
   const formatTime12Hour = (date: Date) => {
     const options: Intl.DateTimeFormatOptions = {
-      hour: "2-digit", // Ensure two-digit hour
+      hour: "2-digit",
       minute: "2-digit",
       hour12: true,
     };
-    return date.toLocaleTimeString("en-US", options).replace(/\s+/g, " ").trim(); // Remove extra spaces
+    return date.toLocaleTimeString("en-US", options).replace(/\s+/g, " ").trim();
   };
-  
 
   const handleStartTimeConfirm = (date: Date) => {
     const formattedTime = formatTime12Hour(date);
@@ -55,10 +60,62 @@ const TimerEdit: React.FC<TimerEditProps> = ({
     setEndPickerVisible(false);
   };
 
+  const validate = () => {
+    const newErrors = {
+      title: "",
+      startTime: "",
+      endTime: "",
+      minutesInterval: "",
+    };
+
+    if (!interval.name || interval.name.trim() === "") {
+      newErrors.title = "Title is required.";
+    } else if (interval.name.length > 255) {
+      newErrors.title = "Title must not exceed 255 characters.";
+    }
+
+    if (!interval.startTime) {
+      newErrors.startTime = "Start time is required.";
+    }
+
+    if (!interval.endTime) {
+      newErrors.endTime = "End time is required.";
+    }
+
+    if (
+      !interval.timerLimit ||
+      isNaN(interval.timerLimit) ||
+      interval.timerLimit < 1
+    ) {
+      newErrors.minutesInterval = "Minutes interval must be at least 1.";
+    }
+
+    setErrors(newErrors);
+    return !Object.values(newErrors).some((error) => error !== "");
+  };
+
   const handleSave = async () => {
-    setLoading(true); // Set loading state to true before saving
-    await onSave(interval); // Call the onSave function
-    setLoading(false); // Reset loading state after save is completed
+    if (!validate()) {
+      ToastAndroid.show(
+        "Validation Error: Please fix the errors before saving.",
+        ToastAndroid.LONG
+      );
+      return;
+    }
+
+    setLoading(true);
+    await onSave(interval);
+    setLoading(false);
+  };
+
+  const handleCancel = () => {
+    setErrors({
+      title: "",
+      startTime: "",
+      endTime: "",
+      minutesInterval: "",
+    });
+    onCancel();
   };
 
   return (
@@ -68,42 +125,48 @@ const TimerEdit: React.FC<TimerEditProps> = ({
           <Text style={styles.modalTitle}>{title}</Text>
           <Text style={styles.fieldLabel}>Title:</Text>
           <TextInput
-            style={styles.input}
+            style={[styles.input, errors.title && styles.errorInput]}
             placeholder="Interval Name"
             value={interval.name}
             onChangeText={(text) => onChange({ ...interval, name: text })}
           />
+          {errors.title ? <Text style={styles.errorText}>{errors.title}</Text> : null}
+
           <Text style={styles.fieldLabel}>Start Time:</Text>
           <TouchableOpacity
             onPress={() => setStartPickerVisible(true)}
-            style={styles.input}
+            style={[styles.input, errors.startTime && styles.errorInput]}
           >
             <Text>{interval.startTime || "Select Start Time"}</Text>
           </TouchableOpacity>
+          {errors.startTime ? <Text style={styles.errorText}>{errors.startTime}</Text> : null}
           <DateTimePickerModal
             isVisible={isStartPickerVisible}
             mode="time"
             onConfirm={handleStartTimeConfirm}
             onCancel={() => setStartPickerVisible(false)}
-            is24Hour={false} // Ensures 12-hour format in picker
+            is24Hour={false}
           />
+
           <Text style={styles.fieldLabel}>End Time:</Text>
           <TouchableOpacity
             onPress={() => setEndPickerVisible(true)}
-            style={styles.input}
+            style={[styles.input, errors.endTime && styles.errorInput]}
           >
             <Text>{interval.endTime || "Select End Time"}</Text>
           </TouchableOpacity>
+          {errors.endTime ? <Text style={styles.errorText}>{errors.endTime}</Text> : null}
           <DateTimePickerModal
             isVisible={isEndPickerVisible}
             mode="time"
             onConfirm={handleEndTimeConfirm}
             onCancel={() => setEndPickerVisible(false)}
-            is24Hour={false} // Ensures 12-hour format in picker
+            is24Hour={false}
           />
+
           <Text style={styles.fieldLabel}>Minutes Interval:</Text>
           <TextInput
-            style={styles.input}
+            style={[styles.input, errors.minutesInterval && styles.errorInput]}
             placeholder="Timer Limit (minutes)"
             value={String(interval.timerLimit)}
             keyboardType="numeric"
@@ -111,12 +174,16 @@ const TimerEdit: React.FC<TimerEditProps> = ({
               onChange({ ...interval, timerLimit: parseInt(text) || 0 })
             }
           />
+          {errors.minutesInterval ? (
+            <Text style={styles.errorText}>{errors.minutesInterval}</Text>
+          ) : null}
+
           <View style={styles.buttonContainer}>
-            <TouchableOpacity style={styles.cancelButton} onPress={onCancel}>
+            <TouchableOpacity style={styles.cancelButton} onPress={handleCancel}>
               <Text style={styles.cancelButtonText}>Cancel</Text>
             </TouchableOpacity>
-            <TouchableOpacity 
-              style={styles.saveButton} 
+            <TouchableOpacity
+              style={styles.saveButton}
               onPress={handleSave}
               disabled={loading}
             >
@@ -196,6 +263,14 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  errorText: {
+    color: "red",
+    fontSize: 12,
+    marginBottom: 5,
+  },
+  errorInput: {
+    borderColor: "red",
   },
 });
 

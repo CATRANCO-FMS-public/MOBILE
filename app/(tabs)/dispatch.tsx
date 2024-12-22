@@ -5,6 +5,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   ActivityIndicator,
+  ToastAndroid
 } from "react-native";
 import { useRouter } from "expo-router";
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE  } from "react-native-maps";
@@ -217,6 +218,7 @@ const App = () => {
                     delete updatedPaths[tracker_ident]; // Clear path for this tracker
                     return updatedPaths;
                   });
+                  handleRefresh();
                 })
                 .catch((error) => {
                   console.error(`Error ending dispatch for tracker: ${tracker_ident}`, error.response || error.message);
@@ -312,16 +314,6 @@ const App = () => {
     setSelectedBus(null);
   };
 
-  useFocusEffect(
-    useCallback(() => {
-      return () => {
-        if (timerRef.current) {
-          timerRef.current.saveTimerState(); // Save the timer state when screen loses focus
-        }
-      };
-    }, [])
-  );
-
   const handleDispatchConfirm = () => {
     setSelectedBus(null);
     if (timerRef.current) {
@@ -345,7 +337,7 @@ const App = () => {
     setTimeout(() => {
       // Increment mapKey to trigger a re-render of the MapView
       setMapKey((prevKey) => prevKey + 1);
-      setPaths({});
+      // setPaths({});
       setRenderMap(true);
       // setPaths({}); // Clear the path if necessary
       setRefreshing(false);
@@ -478,7 +470,7 @@ const App = () => {
             </TouchableOpacity>
           </>
         )}
-        <TouchableOpacity onPress={toggleVisibility} style={styles.eyeIcon}>
+        <TouchableOpacity onPress={handleDispatchConfirm} style={styles.eyeIcon}>
           <Icon name={isHidden ? "eye-outline" : "eye-off-outline"} size={25} color="black" />
         </TouchableOpacity>
       </View>
@@ -523,7 +515,7 @@ const App = () => {
                   if (selectedBus) {
                     setAlleyModalVisible(true); // Open DispatchModal only if a bus is selected
                   } else {
-                    alert("Please select a bus first!");
+                    ToastAndroid.show("Please select a bus first!", ToastAndroid.BOTTOM);
                   }
                 }}
               >
@@ -535,7 +527,7 @@ const App = () => {
                 if (selectedBus) {
                   setDispatchModalVisible(true); // Open DispatchModal only if a bus is selected
                 } else {
-                  alert("Please select a bus first!");
+                  ToastAndroid.show("Please select a bus first!", ToastAndroid.BOTTOM);
                 }
               }}
             >
