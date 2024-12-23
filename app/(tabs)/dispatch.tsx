@@ -197,33 +197,33 @@ const App = () => {
               ],
             }));
 
-            // Check if the real-time data matches any coordinate in the coverage area
-            const matchedLocation = locations.find((loc) =>
-              loc.coordinates.some(
-                (coord) =>
-                  Math.abs(coord.latitude - location.latitude) < 0.0001 &&
-                  Math.abs(coord.longitude - location.longitude) < 0.0001
-              )
-            );
-            
-            console.log("Matched Location:", matchedLocation);
+              // Check if the real-time data matches any coordinate in the coverage area
+              const matchedLocation = locations.find((loc) =>
+                loc.coordinates.some(
+                  (coord) =>
+                    Math.abs(coord.latitude - location.latitude) < 0.0001 &&
+                    Math.abs(coord.longitude - location.longitude) < 0.0001
+                )
+              );
+              
+              console.log("Matched Location:", matchedLocation);
 
-            if (matchedLocation && dispatch_log?.dispatch_logs_id && dispatch_log.status === "on road") {
-              console.log("Ending Dispatch for Matched Tracker:", tracker_ident);
-              endDispatch(dispatch_log.dispatch_logs_id)
-                .then(() => {
-                  console.log(`Dispatch ended successfully for tracker: ${tracker_ident}`);
-                  setPaths((prevPaths) => {
-                    const updatedPaths = { ...prevPaths };
-                    delete updatedPaths[tracker_ident]; // Clear path for this tracker
-                    return updatedPaths;
+              if (matchedLocation && dispatch_log?.dispatch_logs_id && dispatch_log.status === "on road") {
+                console.log("Ending Dispatch for Matched Tracker:", tracker_ident);
+                endDispatch(dispatch_log.dispatch_logs_id)
+                  .then(() => {
+                    console.log(`Dispatch ended successfully for tracker: ${tracker_ident}`);
+                    setPaths((prevPaths) => {
+                      const updatedPaths = { ...prevPaths };
+                      delete updatedPaths[tracker_ident]; // Clear path for this tracker
+                      return updatedPaths;
+                    });
+                    handleRefresh();
+                  })
+                  .catch((error) => {
+                    console.error(`Error ending dispatch for tracker: ${tracker_ident}`, error.response || error.message);
                   });
-                  handleRefresh();
-                })
-                .catch((error) => {
-                  console.error(`Error ending dispatch for tracker: ${tracker_ident}`, error.response || error.message);
-                });
-            }
+              }
 
               // Update bus icon based on dispatch_log status
               if (dispatch_log) {
@@ -286,6 +286,35 @@ const App = () => {
     return cleanupListener; // Cleanup listener on component unmount
   }, []); // Empty dependency array means this effect runs only once
 
+  const handleDispatchEnd = (dispatch_log, tracker_ident, location) => {
+    const matchedLocation = locations.find((loc) =>
+      loc.coordinates.some(
+        (coord) =>
+          Math.abs(coord.latitude - location.latitude) < 0.0001 &&
+          Math.abs(coord.longitude - location.longitude) < 0.0001
+      )
+    );
+  
+    console.log("Matched Location:", matchedLocation);
+  
+    if (matchedLocation && dispatch_log?.dispatch_logs_id && dispatch_log.status === "on road") {
+      console.log("Ending Dispatch for Matched Tracker:", tracker_ident);
+      endDispatch(dispatch_log.dispatch_logs_id)
+        .then(() => {
+          console.log(`Dispatch ended successfully for tracker: ${tracker_ident}`);
+          setPaths((prevPaths) => {
+            const updatedPaths = { ...prevPaths };
+            delete updatedPaths[tracker_ident]; // Clear path for this tracker
+            return updatedPaths;
+          });
+          handleRefresh();
+        })
+        .catch((error) => {
+          console.error(`Error ending dispatch for tracker: ${tracker_ident}`, error.response || error.message);
+        });
+    }
+  };
+  
   
   const refreshTimeout = () => {
     const timeout = setTimeout(() => setRenderMap(true), 10000); // Adjust delay as needed
@@ -470,7 +499,7 @@ const App = () => {
             </TouchableOpacity>
           </>
         )}
-        <TouchableOpacity onPress={handleDispatchConfirm} style={styles.eyeIcon}>
+        <TouchableOpacity onPress={toggleVisibility} style={styles.eyeIcon}>
           <Icon name={isHidden ? "eye-outline" : "eye-off-outline"} size={25} color="black" />
         </TouchableOpacity>
       </View>

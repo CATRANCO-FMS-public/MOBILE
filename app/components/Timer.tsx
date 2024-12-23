@@ -31,18 +31,24 @@ const Timer = forwardRef((props, ref) => {
     isRunning: () => isRunning, // Expose isRunning state
     saveTimerState: saveTimerState, // Expose saveTimerState to the parent
     playSound: playSound,
-    confirmReset: confirmReset, 
+    resetTimer: resetTimer,
+    stopSound: stopSound,
   }));
 
   // Load the sound file
   const playSound = async () => {
     try {
-      const { sound } = await Audio.Sound.createAsync(
+      if (sound) {
+        await sound.unloadAsync(); // Unload the previous sound
+        setSound(null); // Clear the sound state
+      }
+  
+      const { sound: newSound } = await Audio.Sound.createAsync(
         require("./../../assets/sound/timer_alarm.mp3") // Replace with your sound file path
       );
-      setSound(sound);
-      await sound.playAsync();
-      await sound.setIsLoopingAsync(true);
+      setSound(newSound);
+      await newSound.playAsync();
+      await newSound.setIsLoopingAsync(true);
       setIsModalVisible(true); // Show the modal when the sound is playing
       sendNotification();
     } catch (error) {
@@ -58,6 +64,28 @@ const Timer = forwardRef((props, ref) => {
       }
     };
   }, [sound]);
+
+  // Request notification permissions when component mounts
+  useEffect(() => {
+    const requestNotificationPermission = async () => {
+      const { status } = await Notifications.requestPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert("Permission required", "You need to allow notifications for the timer to work properly.");
+      }
+    };
+
+    requestNotificationPermission();
+  }, []);
+
+  useEffect(() => {
+    Notifications.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowAlert: true,
+        shouldPlaySound: true,
+        shouldSetBadge: true,
+      }),
+    });
+  }, []);
 
   // Send a local notification when the timer finishes
   const sendNotification = async () => {
@@ -187,8 +215,10 @@ const Timer = forwardRef((props, ref) => {
   const stopSound = () => {
     if (sound) {
       sound.stopAsync(); // Stop the sound
-      setIsModalVisible(false); // Close the modal
+      sound.unloadAsync(); // Unload the sound to release resources
+      setSound(null); // Reset sound state
     }
+    setIsModalVisible(false); // Close the modal
   };
 
   // Reset Timer
