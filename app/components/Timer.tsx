@@ -6,6 +6,7 @@ import { useFocusEffect } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Audio } from "expo-av";
 import * as Notifications from 'expo-notifications';
+import BackgroundTimer from 'react-native-background-timer';
 
 const Timer = forwardRef((props, ref) => {
   const [timer, setTimer] = useState(0); // Timer in seconds
@@ -27,6 +28,7 @@ const Timer = forwardRef((props, ref) => {
     },
     stopTimer: () => {
       setIsRunning(false); // Stop the timer
+      BackgroundTimer.clearInterval(timerInterval);
     },
     isRunning: () => isRunning, // Expose isRunning state
     saveTimerState: saveTimerState, // Expose saveTimerState to the parent
@@ -34,6 +36,22 @@ const Timer = forwardRef((props, ref) => {
     resetTimer: resetTimer,
     stopSound: stopSound,
   }));
+
+  useEffect(() => {
+    const setupAudio = async () => {
+      try {
+        await Audio.setAudioModeAsync({
+          allowsRecordingIOS: false,
+          staysActiveInBackground: true,  // Keep audio active in background
+          playsInSilentModeIOS: true,  // Play audio in silent mode on iOS
+        });
+      } catch (error) {
+        console.error("Error setting audio mode:", error);
+      }
+    };
+  
+    setupAudio();
+  }, []);
 
   // Load the sound file
   const playSound = async () => {
@@ -65,8 +83,8 @@ const Timer = forwardRef((props, ref) => {
     };
   }, [sound]);
 
-  // Request notification permissions when component mounts
-  useEffect(() => {
+   // Request notification permissions when component mounts
+   useEffect(() => {
     const requestNotificationPermission = async () => {
       const { status } = await Notifications.requestPermissionsAsync();
       if (status !== 'granted') {
@@ -75,7 +93,7 @@ const Timer = forwardRef((props, ref) => {
     };
 
     requestNotificationPermission();
-  }, []);
+  }, [isRunning]);
 
   useEffect(() => {
     Notifications.setNotificationHandler({
@@ -131,12 +149,12 @@ const Timer = forwardRef((props, ref) => {
     }
   }, [selectedInterval, isRunning]);
 
-  // Handle timer countdown
+  // Handle timer countdown in the background
   useEffect(() => {
-    let intervalId: NodeJS.Timeout | null = null;
+    let timerInterval: any;
 
     if (isRunning) {
-      intervalId = setInterval(() => {
+      timerInterval = BackgroundTimer.setInterval(() => {
         setTimer((prev) => {
           if (prev === 1) {
             // Stop timer and reset to the selected interval
@@ -150,7 +168,7 @@ const Timer = forwardRef((props, ref) => {
     }
 
     return () => {
-      if (intervalId) clearInterval(intervalId);
+      if (timerInterval) BackgroundTimer.clearInterval(timerInterval); // Clean up background timer
     };
   }, [isRunning, timer, selectedInterval]);
 

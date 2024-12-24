@@ -23,6 +23,7 @@ import { useFocusEffect } from "expo-router";
 import { endDispatch } from "@/services/dispatch/dispatchServices";
 import SimulatedMarker from "../components/simulatedMarker";
 import { routeData } from "../components/routeData";
+import locations from "../components/locations";
 
 
 const App = () => {
@@ -50,57 +51,6 @@ const App = () => {
     latitudeDelta: 0.01,
     longitudeDelta: 0.01,
   });
-  
-
-  // Static locations with custom marker designs
-  const locations = [
-    {
-      id: 1,
-      title: "Canitoan",
-      primaryCoordinate: { latitude: 8.4663228, longitude: 124.5853069 }, // Marker coordinate
-      coordinates: [
-        { latitude: 8.4663228, longitude: 124.5853069 },
-        { latitude: 8.4662452, longitude: 124.5852767 },
-        { latitude: 8.4661616, longitude: 124.5852413 },
-        { latitude: 8.466295, longitude: 124.585346 },
-        { latitude: 8.466283, longitude: 124.585379 },
-      ],
-      icon: require("../../assets/images/canitoan.png"),
-    },
-    {
-      id: 2,
-      title: "Silver Creek",
-      primaryCoordinate: { latitude: 8.475946, longitude: 124.6120194 },
-      coordinates: [
-        { latitude: 8.475946, longitude: 124.6120194 },
-        { latitude: 8.475959, longitude: 124.6119225 },
-        { latitude: 8.4759729, longitude: 124.6118273 },
-        { latitude: 8.4759855, longitude: 124.6117332 },
-        { latitude: 8.475996, longitude: 124.6116395 },
-      ],
-      icon: require("../../assets/images/silver_creek.png"),
-    },
-    {
-      id: 3,
-      title: "Cogon",
-      primaryCoordinate: { latitude: 8.4758845, longitude: 124.650698 },
-      coordinates: [
-        { latitude: 8.4759746, longitude: 124.6507055 },
-        { latitude: 8.4760674, longitude: 124.6507123 },
-        { latitude: 8.4761608, longitude: 124.6507218 },
-        { latitude: 8.475870, longitude: 124.650668 },
-        { latitude: 8.475803, longitude: 124.650662 },
-        { latitude: 8.475654, longitude: 124.650639 },
-        { latitude: 8.475526, longitude: 124.650526 },
-        { latitude: 8.475603, longitude: 124.650023 },
-        { latitude: 8.475712, longitude: 124.650013 },
-        { latitude: 8.475821, longitude: 124.650023 },
-        { latitude: 8.476028, longitude: 124.650015 },
-        { latitude: 8.476889, longitude: 124.650006 },
-      ],
-      icon: require("../../assets/images/cogon.png"),
-    },
-  ];  
 
   // Load data from AsyncStorage when the component mounts or the screen is focused
   useFocusEffect(
@@ -285,36 +235,6 @@ const App = () => {
 
     return cleanupListener; // Cleanup listener on component unmount
   }, []); // Empty dependency array means this effect runs only once
-
-  const handleDispatchEnd = (dispatch_log, tracker_ident, location) => {
-    const matchedLocation = locations.find((loc) =>
-      loc.coordinates.some(
-        (coord) =>
-          Math.abs(coord.latitude - location.latitude) < 0.0001 &&
-          Math.abs(coord.longitude - location.longitude) < 0.0001
-      )
-    );
-  
-    console.log("Matched Location:", matchedLocation);
-  
-    if (matchedLocation && dispatch_log?.dispatch_logs_id && dispatch_log.status === "on road") {
-      console.log("Ending Dispatch for Matched Tracker:", tracker_ident);
-      endDispatch(dispatch_log.dispatch_logs_id)
-        .then(() => {
-          console.log(`Dispatch ended successfully for tracker: ${tracker_ident}`);
-          setPaths((prevPaths) => {
-            const updatedPaths = { ...prevPaths };
-            delete updatedPaths[tracker_ident]; // Clear path for this tracker
-            return updatedPaths;
-          });
-          handleRefresh();
-        })
-        .catch((error) => {
-          console.error(`Error ending dispatch for tracker: ${tracker_ident}`, error.response || error.message);
-        });
-    }
-  };
-  
   
   const refreshTimeout = () => {
     const timeout = setTimeout(() => setRenderMap(true), 10000); // Adjust delay as needed
@@ -366,9 +286,8 @@ const App = () => {
     setTimeout(() => {
       // Increment mapKey to trigger a re-render of the MapView
       setMapKey((prevKey) => prevKey + 1);
-      // setPaths({});
       setRenderMap(true);
-      // setPaths({}); // Clear the path if necessary
+      setPaths({}); // Clear the path if necessary
       setRefreshing(false);
     }, 5000); // Hide the map for 5 seconds
 

@@ -8,16 +8,6 @@
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-    "ios": {
-      "supportsTablet": true,
-      "infoPlist": {
-        "UIBackgroundModes": [
-          "fetch"
-        ],
-        "NSPushNotificationsUsageDescription": "This app uses notifications to keep you informed about timer updates.",
-        "NSUserTrackingUsageDescription": "This app uses tracking for notifications and analytics."
-      }
-    },
     "android": {
       "icon": "./assets/images/catranco_logo.png",
       "adaptiveIcon": {
@@ -25,7 +15,7 @@
         "backgroundColor": "#ffffff"
       },
       "notification": {
-        "icon": "./assets/images/catranco_notification_icon.png",
+        "icon": "./assets/images/catranco_logo.png",
         "color": "#ffffff"
       },
       "permissions": [
@@ -39,12 +29,8 @@
       ],
       "package": "com.khenpaler.TransitTrackapp"
     },
-    "web": {
-      "bundler": "metro",
-      "output": "static",
-      "favicon": "./assets/images/favicon.png"
-    },
     "plugins": [
+      "react-native-background-fetch",
       "expo-router",
       [
         "expo-splash-screen",
@@ -75,6 +61,12 @@
         }
       ]
     ],
+    "audio": {
+      "mode": "media",
+      "interruptionModeAndroid": "duckAudio",
+      "staysActiveInBackground": true,
+      "playsInSilentModeIOS": true
+    },
     "experiments": {
       "typedRoutes": true
     },
@@ -85,6 +77,9 @@
       "eas": {
         "projectId": "24bf3270-e8a1-424e-a97f-0e95568b0efd"
       }
+    },
+    "ios": {
+      "bundleIdentifier": "com.khenpaler.TransitTrackapp"
     }
   }
 }
