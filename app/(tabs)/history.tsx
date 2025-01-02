@@ -14,7 +14,7 @@ import Icon from "react-native-vector-icons/Ionicons";
 import { Calendar } from "react-native-calendars";
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
-import { getAllDispatches } from "@/services/dispatch/dispatchServices";
+import { getAllDispatches, deleteDispatchRecord, deleteDispatchLogsByDate } from "@/services/dispatch/dispatchServices";
 
 const History = () => {
   const [dispatchData, setDispatchData] = useState([]);
@@ -22,10 +22,11 @@ const History = () => {
   const [selectedDate, setSelectedDate] = useState(null);
   const [showCalendar, setShowCalendar] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [selectedRow, setSelectedRow] = useState(null);
   const router = useRouter();
 
   // Column widths
-  const widthArr = [120, 120, 100, 150, 150, 150, 120, 120];
+  const widthArr = [120, 120, 100, 150, 150, 150, 120, 120, 120];
 
   useEffect(() => {
     const fetchData = async () => {
@@ -39,6 +40,7 @@ const History = () => {
             (profile) => profile.position === "passenger_assistant_officer"
           );
           return {
+            id: log.dispatch_logs_id,
             vehicle_id: log.vehicle_assignments?.vehicle_id || "N/A",
             start_time: log.start_time,
             end_time: log.end_time || "N/A",
@@ -48,7 +50,6 @@ const History = () => {
             updated_by: log.updated_dispatch?.username || "N/A",
             driver_last_name: driver?.last_name || "N/A",
             pao_last_name: pao?.last_name || "N/A",
-            created_at: log.created_at,
           };
         });
         setDispatchData(transformedData);
@@ -63,11 +64,23 @@ const History = () => {
     fetchData();
   }, []);
 
+  useEffect(() => {
+    // Set today's date if no date is selected
+    const today = new Date().toISOString().split('T')[0]; // Get today's date in 'YYYY-MM-DD' format
+    if (!selectedDate) {
+      setSelectedDate(today);
+    }
+  }, []);
+
   const handleDateSelect = (day) => {
     setSelectedDate(day.dateString);
-    const filteredData = dispatchData.filter(
-      (dispatch) => dispatch.created_at.startsWith(day.dateString) // Match the date part of `created_at`
-    );
+  
+    // Filter based on start_time instead of created_at
+    const filteredData = dispatchData.filter((dispatch) => {
+      // Ensure start_time exists and is a string before calling startsWith
+      return dispatch.start_time && typeof dispatch.start_time === 'string' && dispatch.start_time.startsWith(day.dateString);
+    });
+  
     setFilteredDispatchData(filteredData);
     setShowCalendar(false); // Close the calendar after selection
   };
@@ -184,6 +197,92 @@ const History = () => {
     router.back();
   };
 
+  const handleLongPress = async (id) => {
+      try {
+        // Set the selected row for highlighting
+        setSelectedRow(id);
+      
+        // Show confirmation alert before deleting
+        const confirmDeletion = await new Promise((resolve) => {
+          Alert.alert(
+            "Confirm Deletion",
+            "Are you sure you want to delete this record?",
+            [
+              {
+                text: "Cancel",
+                onPress: () => resolve(false),
+                style: "cancel",
+              },
+              { text: "OK", onPress: () => resolve(true) },
+            ]
+          );
+        });
+    
+        if (confirmDeletion) {
+          // Call the delete service
+          await deleteDispatchRecord(id);
+    
+          // Filter out the deleted row from the filtered data
+          setFilteredDispatchData((prevData) =>
+            prevData.filter((record) => record.id !== id)
+          );
+    
+          Alert.alert("Success", "Record deleted successfully");
+        }
+      } catch (error) {
+        Alert.alert("Error", "Failed to delete the record.");
+        console.error("Error deleting overspeed record:", error);
+      } finally {
+        // Reset the selected row after the action (deletion or cancel)
+        setSelectedRow(null);
+      }
+    };
+
+  const handleDeleteByDate = async () => {
+      try {
+        if (!selectedDate) {
+          Alert.alert("Error", "Please select a date first.");
+          return;
+        }
+  
+        // Confirm the deletion by date
+        const confirmDeletion = await new Promise((resolve) => {
+          Alert.alert(
+            "Confirm Deletion",
+            `Are you sure you want to delete all records for ${selectedDate}?`,
+            [
+              {
+                text: "Cancel",
+                onPress: () => resolve(false),
+                style: "cancel",
+              },
+              { text: "OK", onPress: () => resolve(true) },
+            ]
+          );
+        });
+  
+        if (confirmDeletion) {
+          // Call the delete service by date
+          await deleteDispatchLogsByDate(selectedDate);
+  
+          // Remove the deleted records from the filtered data
+          setFilteredDispatchData((prevData) =>
+            prevData.filter(
+              (record) => !record.start_time.startsWith(selectedDate)
+            )
+          );
+  
+          Alert.alert(
+            "Success",
+            `All records for ${selectedDate} deleted successfully.`
+          );
+        }
+      } catch (error) {
+        Alert.alert("Error", "Failed to delete records.");
+        console.error("Error deleting overspeed records:", error);
+      }
+    };
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -223,13 +322,15 @@ const History = () => {
                 {filteredDispatchData.map((rowData, index) => (
                   <Row
                     key={index}
-                    data={Object.values(rowData)} // Mapping object to array of values
+                    data={Object.values(rowData).filter((value, idx) => idx !== 0)} // Filter out the `id` column (index 0)
                     widthArr={widthArr}
                     style={[
                       styles.row,
                       index % 2 === 0 ? styles.rowEven : styles.rowOdd,
+                      rowData.id === selectedRow ? styles.highlightedRow : null,
                     ]}
                     textStyle={styles.rowText}
+                    onLongPress={() => handleLongPress(rowData.id)}
                   />
                 ))}
               </Table>
@@ -251,7 +352,14 @@ const History = () => {
                 [selectedDate]: { selected: true, selectedColor: "blue" },
               }}
               onDayPress={handleDateSelect}
+              current={selectedDate}
             />
+            <TouchableOpacity
+              style={styles.deleteButtonInsideModal}
+              onPress={handleDeleteByDate}
+            >
+              <Icon name="trash" size={24} color="#fff" />
+            </TouchableOpacity>
             <TouchableOpacity
               style={styles.closeButton}
               onPress={() => setShowCalendar(false)}
@@ -275,7 +383,7 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 10,
+    padding: 5,
     justifyContent: "space-between",
   },
   title: {
@@ -306,6 +414,9 @@ const styles = StyleSheet.create({
   row: {
     height: 40,
   },
+  highlightedRow: {
+    backgroundColor: '#F44336', // Example highlight color (yellow)
+  },
   rowEven: {
     backgroundColor: "#E7E6E1",
   },
@@ -328,6 +439,14 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     padding: 20,
     borderRadius: 10,
+  },
+  deleteButtonInsideModal: {
+    marginTop: 20,
+    backgroundColor: "#e74c3c",
+    padding: 10,
+    borderRadius: 50,
+    alignItems: "center",
+    justifyContent: "center",
   },
   closeButton: {
     marginTop: 10,

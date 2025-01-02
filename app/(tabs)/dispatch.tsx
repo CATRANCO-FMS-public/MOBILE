@@ -21,10 +21,12 @@ import SwipeToRefresh from "../components/Refresh";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from "expo-router";
 import { endDispatch } from "@/services/dispatch/dispatchServices";
+import { createOverspeedRecord } from "@/services/overspeedTracking/overspeedServices";
 import SimulatedMarker from "../components/simulatedMarker";
 import { routeData } from "../components/routeData";
 import locations from "../components/locations";
-
+import OverspeedAlert from "../components/OverspeedAlert";
+import { resetBlockedLocationsForAllVehicles } from "@/services/resetBlockedLocations/resetBlockedLocationsServices";
 
 const App = () => {
   const [sidebarVisible, setSidebarVisible] = useState(false);
@@ -51,6 +53,8 @@ const App = () => {
     latitudeDelta: 0.01,
     longitudeDelta: 0.01,
   });
+  const [showOverspeedAlert, setShowOverspeedAlert] = useState(false);
+  const [overspeedVehicleId, setOverspeedVehicleId] = useState<string | null>(null);
 
   // Load data from AsyncStorage when the component mounts or the screen is focused
   useFocusEffect(
@@ -97,6 +101,36 @@ const App = () => {
 
           // Check if location data is available and valid
           if (location && location.latitude && location.longitude) {
+
+            // Check for overspeed
+            const speedThreshold = 20; // Define your speed threshold
+            if (location.speed > speedThreshold) {
+              console.log("Overspeed detected for tracker:", tracker_ident);
+
+              // Prepare overspeed data
+              const overspeedData = {
+                dispatch_logs_id: dispatch_log?.dispatch_logs_id,
+                vehicle_id: vehicle_id,
+                speed: location.speed,
+                latitude: location.latitude,
+                longitude: location.longitude,
+              };
+
+              try {
+                // Call the service to create the overspeed record
+                const response = await createOverspeedRecord(overspeedData);
+                console.log("Overspeed data successfully logged:", response);
+
+                // Show the overspeed alert with vehicle_id
+                setOverspeedVehicleId(vehicle_id); // Set the vehicle_id
+                setShowOverspeedAlert(true); // Trigger modal visibility
+                
+              } catch (error) {
+                console.error("Error logging overspeed data:", error);
+              }
+            }
+            
+            // Updating trackers data
             setTrackersData((prevTrackers) => {
               // Check if tracker already exists
               const existingTrackerIndex = prevTrackers.findIndex(
@@ -280,18 +314,28 @@ const App = () => {
   const onRefresh = async () => {
     setRefreshing(true);
     setRenderMap(false);
-    if (busListRef.current) {
-      busListRef.current.refreshData();
-    }
-    setTimeout(() => {
-      // Increment mapKey to trigger a re-render of the MapView
-      setMapKey((prevKey) => prevKey + 1);
-      setRenderMap(true);
-      setPaths({}); // Clear the path if necessary
-      setRefreshing(false);
-    }, 5000); // Hide the map for 5 seconds
 
-    setRefreshing(false);
+      try {
+          // Call the function to reset blocked locations for all vehicles
+          const resetResponse = await resetBlockedLocationsForAllVehicles();
+          console.log('Blocked locations reset:', resetResponse);
+
+          if (busListRef.current) {
+              busListRef.current.refreshData();
+          }
+
+          setTimeout(() => {
+              // Increment mapKey to trigger a re-render of the MapView
+              setMapKey((prevKey) => prevKey + 1);
+              setRenderMap(true);
+              setPaths({}); // Clear the path if necessary
+              setRefreshing(false);
+          }, 5000); // Hide the map for 5 seconds
+
+      } catch (error) {
+          console.error('Error resetting blocked locations:', error);
+          setRefreshing(false);
+      }
   };
 
   const filterOptions = [
@@ -509,6 +553,13 @@ const App = () => {
           handleRefresh();
         }}
         timerRef={timerRef}
+      />
+
+      {/* Pass the vehicle_id to the OverspeedAlert modal */}
+      <OverspeedAlert
+        isVisible={showOverspeedAlert}
+        onClose={() => setShowOverspeedAlert(false)} // Hide modal on close
+        vehicleId={overspeedVehicleId} // Pass vehicle_id
       />
     </View>
   );

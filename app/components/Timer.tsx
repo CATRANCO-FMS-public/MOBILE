@@ -195,7 +195,7 @@ const Timer = forwardRef((props, ref) => {
       const savedTimerState = await AsyncStorage.getItem("timer");
       if (savedTimerState) {
         const { timer: savedTimer, isRunning: savedIsRunning } = JSON.parse(savedTimerState);
-        setTimer(savedTimer);
+        setTimer(Math.floor(savedTimer));
         setIsRunning(savedIsRunning);
       }
     } catch (error) {

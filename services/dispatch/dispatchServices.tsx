@@ -87,3 +87,25 @@ export const getAllOnRoad = async () => {
     throw error.response?.data || error.message;
   }
 };
+
+// Service for deleting a dispatch log by ID
+export const deleteDispatchRecord = async (id: number) => {
+  try {
+    const response = await api.delete(`/user/dispatcher/dispatch_logs/delete/${id}`);
+    return response.data;
+  } catch (error: any) {
+    console.error("Error in deleteDispatchRecord:", error);
+    throw error.response?.data || error.message;
+  }
+};
+
+// Service for deleting dispatch logs by date
+export const deleteDispatchLogsByDate = async (date: string) => {
+  try {
+    const response = await api.delete(`/user/dispatcher/dispatch_logs/delete_by_date/${date}`);
+    return response.data;
+  } catch (error: any) {
+    console.error("Error in deleteDispatchLogsByDate:", error);
+    throw error.response?.data || error.message;
+  }
+};

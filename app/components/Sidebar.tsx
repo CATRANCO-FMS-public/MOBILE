@@ -168,6 +168,32 @@ const Sidebar = ({ isVisible, onClose }) => {
               </View>
             </TouchableOpacity>
 
+          {/* Overspeeding History */}
+            <TouchableOpacity
+              style={[
+                styles.menuItem,
+                activeMenu === "/(tabs)/overspeedHistory" && styles.activeMenuItem,
+              ]}
+              onPress={() => handleMenuClick("/(tabs)/overspeedHistory")}
+            >
+              <View style={[styles.menuTextContainer, activeMenu === "/(tabs)/overspeedHistory" && styles.activeMenuTextContainer]}>
+                <Icon
+                  name="speedometer"
+                  size={20}
+                  color={activeMenu === "/(tabs)/overspeedHistory" ? "#3b82f6" : "#333"}
+                  style={[styles.menuIcon, activeMenu === "/(tabs)/overspeedHistory" && styles.activeMenuIcon]}
+                />
+                <Text
+                  style={[
+                    styles.menuText,
+                    activeMenu === "/(tabs)/overspeedHistory" && styles.activeMenuText,
+                  ]}
+                >
+                  Overspeeding History
+                </Text>
+              </View>
+            </TouchableOpacity>
+
             {/* Dispatch Setting */}
             <TouchableOpacity
               style={[
@@ -189,7 +215,7 @@ const Sidebar = ({ isVisible, onClose }) => {
                     activeMenu === "/(tabs)/DispatchSettings" && styles.activeMenuText,
                   ]}
                 >
-                  Dispatch Setting
+                  Interval Setting
                 </Text>
               </View>
             </TouchableOpacity>
