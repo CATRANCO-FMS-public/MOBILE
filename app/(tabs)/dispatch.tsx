@@ -103,7 +103,7 @@ const App = () => {
           if (location && location.latitude && location.longitude) {
 
             // Check for overspeed
-            const speedThreshold = 20; // Define your speed threshold
+            const speedThreshold = 50; // Define your speed threshold
             if (location.speed > speedThreshold) {
               console.log("Overspeed detected for tracker:", tracker_ident);
 

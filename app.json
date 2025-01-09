@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "TransitTrack-app",
+    "name": "TransitTrack",
     "slug": "TransitTrack-app",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -9,13 +9,13 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "android": {
-      "icon": "./assets/images/catranco_logo.png",
+      "icon": "./assets/images/catranco_app_icon.png",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/catranco_logo.png",
+        "foregroundImage": "./assets/images/catranco_app_icon.png",
         "backgroundColor": "#ffffff"
       },
       "notification": {
-        "icon": "./assets/images/catranco_logo.png",
+        "icon": "./assets/images/catranco_app_icon.png",
         "color": "#ffffff"
       },
       "permissions": [
@@ -32,15 +32,6 @@
     "plugins": [
       "react-native-background-fetch",
       "expo-router",
-      [
-        "expo-splash-screen",
-        {
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 200,
-          "resizeMode": "contain",
-          "backgroundColor": "#ffffff"
-        }
-      ],
       [
         "expo-image-picker",
         {

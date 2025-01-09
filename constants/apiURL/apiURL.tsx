@@ -1,4 +1,4 @@
-const apiURL = "http://192.168.65.191:8000";
+const apiURL = "https://catranco.jwisnetwork.com";
 
 
 export default apiURL;

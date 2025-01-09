@@ -41,6 +41,7 @@ export const AuthProvider = ({ children }) => {
       const response = await login(username, password); // Call login API
 
       // Check if response contains a valid token and role
+      // if (response?.token && (response?.user?.role?.role_id === 2 || response?.user?.role?.role_id === 1)) {
       if (response?.token && response?.user?.role?.role_id === 2) {
 
         // Set user state with the response user object
