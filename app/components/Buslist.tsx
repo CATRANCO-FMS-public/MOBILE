@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useImperativeHandle, forwardRef } from "react";
-import { FlatList, View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { FlatList, View, Text, TouchableOpacity, StyleSheet, Modal, ToastAndroid} from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
 import { getVehicleAssignments } from "@/services/vehicle/vehicleServices";
-import { getAllOnAlley, getAllOnRoad } from "@/services/dispatch/dispatchServices"; // Update the import
+import { getAllOnAlley, getAllOnRoad,deleteDispatchRecord } from "@/services/dispatch/dispatchServices"; // Update the import
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 interface BusData {
@@ -22,6 +22,8 @@ interface BusListProps {
 
 const BusList = forwardRef(({ selectedBus, setSelectedBus, filter }: BusListProps, ref) => {
   const [busData, setBusData] = useState<BusData[]>([]);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedDispatchLogId, setSelectedDispatchLogId] = useState<number | null>(null);
 
   const fetchAssignmentsAndDispatches = async () => {
     try {
@@ -72,6 +74,29 @@ const BusList = forwardRef(({ selectedBus, setSelectedBus, filter }: BusListProp
       await AsyncStorage.setItem("@busData", JSON.stringify(sortedData));
     } catch (error) {
       console.error('Error fetching vehicle assignments and dispatches:', error);
+    }
+  };
+
+  const handleLongPress = (dispatch_logs_id: number | null) => {
+    if (dispatch_logs_id) {
+      setSelectedDispatchLogId(dispatch_logs_id);
+      setModalVisible(true);
+    } else {
+      ToastAndroid.show("This bus is currently idle.", ToastAndroid.SHORT);
+    }
+  };
+  
+  const confirmCancelDispatch = async () => {
+    if (selectedDispatchLogId) {
+      try {
+        await deleteDispatchRecord(selectedDispatchLogId);
+        ToastAndroid.show("Canceled successfully!", ToastAndroid.SHORT);
+        fetchAssignmentsAndDispatches();
+      } catch (error) {
+        ToastAndroid.show("Failed to cancel.", ToastAndroid.SHORT);
+      } finally {
+        setModalVisible(false);
+      }
     }
   };
 
@@ -136,6 +161,7 @@ const BusList = forwardRef(({ selectedBus, setSelectedBus, filter }: BusListProp
                   dispatch_logs_id: item.dispatch_logs_id,
                 })
               }
+              onLongPress={() => handleLongPress(item.dispatch_logs_id)}
             >
               <Icon name="bus" size={20} color="black" />
               <View style={{ flex: 1, flexDirection: "column" }}>
@@ -148,6 +174,28 @@ const BusList = forwardRef(({ selectedBus, setSelectedBus, filter }: BusListProp
       ) : (
         <Text style={styles.noBusesText}>No Vehicles Available...</Text>
       )}
+
+      {/* Cancel Confirmation Modal */}
+      <Modal
+        transparent={true}
+        visible={modalVisible}
+        animationType="fade"
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalTitle}>Are you sure you want to cancel this?</Text>
+            <View style={styles.resetButtonContainer}>
+              <TouchableOpacity onPress={confirmCancelDispatch} style={[styles.modalOption, styles.resetButtonYes]}>
+                <Text style={[styles.modalText, { color: "#fff" }]}>Yes</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => setModalVisible(false)} style={[styles.modalOption, styles.resetButtonNo]}>
+                <Text style={[styles.modalText, { color: "#fff" }]}>No</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </>
   );
 });
@@ -180,6 +228,56 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: 'black',
     marginTop: 20,
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  modalContainer: {
+    width: "80%",
+    backgroundColor: "white",
+    borderRadius: 15,
+    padding: 20,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 5,
+    elevation: 5,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 15,
+  },
+  resetButtonContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 20,
+    width: "100%",
+  },
+  resetButtonYes: {
+    flex: 1,
+    marginRight: 10,
+    backgroundColor: "#4CAF50",
+  },
+  resetButtonNo: {
+    flex: 1,
+    marginLeft: 10,
+    backgroundColor: "#F44336",
+  },
+  modalOption: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+    marginVertical: 5,
+    width: "100%",
+    alignItems: "center",
+  },
+  modalText: {
+    fontSize: 16,
   },
 });
 
