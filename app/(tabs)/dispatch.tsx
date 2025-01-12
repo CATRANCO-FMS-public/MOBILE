@@ -5,7 +5,8 @@ import {
   StyleSheet,
   TouchableOpacity,
   ActivityIndicator,
-  ToastAndroid
+  ToastAndroid,
+  Image
 } from "react-native";
 import { useRouter } from "expo-router";
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE  } from "react-native-maps";
@@ -38,7 +39,7 @@ const App = () => {
   const [trackersData, setTrackersData] = useState([]);
   const [paths, setPaths] = useState({});
   const [busIcons, setBusIcons] = useState<{ [tracker_ident: string]: any }>({
-    "default": require("../../assets/images/bus_idle.png"),
+    "default": Image.resolveAssetSource(require("../../assets/images/bus_idle.png")),
   });
   const [renderMap, setRenderMap] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -172,14 +173,27 @@ const App = () => {
               return updatedTrackers; // Return updated state
             });
 
-            // Update path for this tracker
-            setPaths((prevPaths) => ({
-              ...prevPaths,
-              [tracker_ident]: [
-                ...(prevPaths[tracker_ident] || []),
-                { latitude: location.latitude, longitude: location.longitude },
-              ],
-            }));
+              // Update path for this tracker
+              setPaths((prevPaths) => {
+                const updatedPaths = {
+                  ...prevPaths,
+                  [tracker_ident]: [
+                    ...(prevPaths[tracker_ident] || []),
+                    { latitude: location.latitude, longitude: location.longitude },
+                  ],
+                };
+
+                // Save the updated paths to AsyncStorage
+                (async () => {
+                  try {
+                    await AsyncStorage.setItem("paths", JSON.stringify(updatedPaths));
+                  } catch (error) {
+                    console.error("Error saving paths to AsyncStorage:", error);
+                  }
+                })();
+
+                return updatedPaths; // Return the updated state
+              });
 
               // Check if the real-time data matches any coordinate in the coverage area
               const matchedLocation = locations.find((loc) =>
@@ -197,10 +211,21 @@ const App = () => {
                 endDispatch(dispatch_log.dispatch_logs_id)
                   .then(() => {
                     console.log(`Dispatch ended successfully for tracker: ${tracker_ident}`);
+                    // Clear path for this tracker
                     setPaths((prevPaths) => {
                       const updatedPaths = { ...prevPaths };
-                      delete updatedPaths[tracker_ident]; // Clear path for this tracker
-                      return updatedPaths;
+                      delete updatedPaths[tracker_ident]; // Remove the path for this tracker
+
+                      // Save the updated paths to AsyncStorage
+                      (async () => {
+                        try {
+                          await AsyncStorage.setItem("paths", JSON.stringify(updatedPaths));
+                        } catch (error) {
+                          console.error("Error saving updated paths to AsyncStorage:", error);
+                        }
+                      })();
+
+                      return updatedPaths; // Return the updated state
                     });
                     handleRefresh();
                   })
@@ -215,9 +240,9 @@ const App = () => {
 
                 // Determine the icon path based on dispatch_log status
                 if (dispatch_log.status === "on road") {
-                  iconPath = require("../../assets/images/bus_on_road.png");
+                  iconPath = Image.resolveAssetSource(require("../../assets/images/bus_on_road.png"));
                 } else if (dispatch_log.status === "on alley") {
-                  iconPath = require("../../assets/images/bus_on_alley.png");
+                  iconPath = Image.resolveAssetSource(require("../../assets/images/bus_on_alley.png"));
                 }
 
                 // If an icon path was determined, update busIcons state
@@ -238,7 +263,7 @@ const App = () => {
                 setBusIcons((prevIcons) => {
                   const updatedIcons = {
                     ...prevIcons,
-                    [tracker_ident]: require("../../assets/images/bus_idle.png"),
+                    [tracker_ident]: Image.resolveAssetSource(require("../../assets/images/bus_idle.png")),
                   };
 
                   // Save updated busIcons to AsyncStorage
@@ -269,6 +294,21 @@ const App = () => {
 
     return cleanupListener; // Cleanup listener on component unmount
   }, []); // Empty dependency array means this effect runs only once
+
+  // useEffect(() => {
+  //   const loadPaths = async () => {
+  //     try {
+  //       const storedPaths = await AsyncStorage.getItem("paths");
+  //       if (storedPaths) {
+  //         setPaths(JSON.parse(storedPaths));
+  //       }
+  //     } catch (error) {
+  //       console.error("Error loading paths from AsyncStorage:", error);
+  //     }
+  //   };
+  
+  //   loadPaths();
+  // }, []);
   
   const refreshTimeout = () => {
     const timeout = setTimeout(() => setRenderMap(true), 10000); // Adjust delay as needed
@@ -317,8 +357,10 @@ const App = () => {
 
       try {
           // Call the function to reset blocked locations for all vehicles
-          const resetResponse = await resetBlockedLocationsForAllVehicles();
-          console.log('Blocked locations reset:', resetResponse);
+          // const resetResponse = await resetBlockedLocationsForAllVehicles();
+          // console.log('Blocked locations reset:', resetResponse);
+
+          AsyncStorage.removeItem('paths');
 
           if (busListRef.current) {
               busListRef.current.refreshData();
@@ -328,7 +370,6 @@ const App = () => {
               // Increment mapKey to trigger a re-render of the MapView
               setMapKey((prevKey) => prevKey + 1);
               setRenderMap(true);
-              setPaths({}); // Clear the path if necessary
               setRefreshing(false);
           }, 5000); // Hide the map for 5 seconds
 
@@ -388,24 +429,33 @@ const App = () => {
           initialRegion={initialRegion}
         >
           {/* Render a polyline and marker for each tracker */}
-          {trackersData.map((tracker) => (
-            <React.Fragment key={tracker.tracker_ident}>
-              {/* Polyline for the tracker route */}
-              <Polyline
-                coordinates={paths[tracker.tracker_ident] || []} // Path for this tracker
-                strokeWidth={3}
-                strokeColor="blue"
-              />
+          {trackersData.map((tracker) => {
+            // Determine polyline color based on dispatch_log status
+            const polylineColor = tracker.dispatch_log?.status === "on road"
+              ? "green"
+              : tracker.dispatch_log?.status === "on alley"
+              ? "orange"
+              : "gray"; // Default to gray for idle or undefined statuses
 
-              {/* Marker for the tracker */}
-              <Marker
-                coordinate={tracker.location}
-                title={`BUS ${tracker.vehicle_id || "Unknown"}`}
-                description={`Speed: ${tracker.location.speed || 0} km/h`}
-                icon={busIcons[tracker.tracker_ident]} // Icon specific to the tracker
-              />
-            </React.Fragment>
-          ))}
+            return (
+              <React.Fragment key={tracker.tracker_ident}>
+                {/* Polyline for the tracker route */}
+                <Polyline
+                  coordinates={paths[tracker.tracker_ident] || []} // Path for this tracker
+                  strokeWidth={3}
+                  strokeColor={polylineColor} // Dynamic color based on status
+                />
+
+                {/* Marker for the tracker */}
+                <Marker
+                  coordinate={tracker.location}
+                  title={`BUS ${tracker.vehicle_id || "Unknown"}`}
+                  description={`Speed: ${tracker.location.speed || 0} km/h`}
+                  icon={busIcons[tracker.tracker_ident]} // Icon specific to the tracker
+                />
+              </React.Fragment>
+            );
+          })}
 
           {/* Static Markers with Custom Icons */}
           {locations.map((location) => (
@@ -413,7 +463,7 @@ const App = () => {
               key={location.id}
               coordinate={location.primaryCoordinate} // Use primaryCoordinate for the marker
               title={location.title}
-              icon={location.icon} // Custom icon for each location
+              icon={Image.resolveAssetSource(location.icon)} // Custom icon for each location
             />
           ))}
 

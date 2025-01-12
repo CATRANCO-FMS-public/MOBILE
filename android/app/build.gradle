@@ -96,6 +96,7 @@ Project background_fetch = project(':react-native-background-fetch')
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0.0"
+        resConfigs "hdpi", "mdpi", "xhdpi", "xxhdpi", "xxxhdpi"
     }
     signingConfigs {
         debug {
