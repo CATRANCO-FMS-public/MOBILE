@@ -370,6 +370,7 @@ const App = () => {
               // Increment mapKey to trigger a re-render of the MapView
               setMapKey((prevKey) => prevKey + 1);
               setRenderMap(true);
+              setPaths({});
               setRefreshing(false);
           }, 5000); // Hide the map for 5 seconds
 
@@ -416,7 +417,25 @@ const App = () => {
       });
     }
   }, []); // Run whenever `locations` changes
+
+
+  const generateUniqueColor = (vehicle_id: string) => {
+    // A simple color generator based on vehicle_id
+    const colors = [
+      "#FF0000", // Red
+      "#00FF00", // Green
+      "#0000FF", // Blue
+      "#FFFF00", // Yellow
+      "#FF00FF", // Magenta
+      "#00FFFF", // Cyan
+      "#FFA500", // Orange
+      "#800080", // Purple
+    ];
   
+    // Generate a unique index based on the vehicle_id (or another identifier)
+    const index = parseInt(vehicle_id, 10) % colors.length;
+    return colors[index]; // Return a color from the array based on the generated index
+  };
 
   return (
     <View style={styles.container}>
@@ -427,12 +446,12 @@ const App = () => {
           provider={PROVIDER_GOOGLE}
           style={styles.map}
           initialRegion={initialRegion}
-        >
+          >
           {/* Render a polyline and marker for each tracker */}
           {trackersData.map((tracker) => {
             // Determine polyline color based on dispatch_log status
             const polylineColor = tracker.dispatch_log?.status === "on road"
-              ? "green"
+              ? generateUniqueColor(tracker.vehicle_id || tracker.tracker_ident)
               : tracker.dispatch_log?.status === "on alley"
               ? "orange"
               : "gray"; // Default to gray for idle or undefined statuses
