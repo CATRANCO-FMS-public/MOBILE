@@ -6,10 +6,10 @@ This app is designed for Dispatchers. Their account credentials, which include t
 
 ## Application Preview
 
-![Login Screen](/CATRANCO-FMS-Mobile/assets/images/login.jpg)
+![Login Screen](assets/images/login.jpg)
 *Login screen of the TransitTrack Mobile Application.*
 
-![Dashboard](/CATRANCO-FMS-Mobile/assets/images/dashboard.jpg)
+![Dashboard](assets/images/dashboard.jpg)
 *Dashboard view for dispatchers.*
 
 ## Getting Started
