@@ -6,6 +6,8 @@ This app is designed for Dispatchers. Their account credentials, which include t
 
 The web application handles the account creation. As the admin starts inputting their employee credentials, it will automatically create their accounts.
 
+**This application is built using React Native.**
+
 ## **Application Preview**
 
 | ![Login Screen](assets/images/login.jpg) | ![Dashboard](assets/images/dashboard.jpg) |
@@ -78,3 +80,4 @@ Follow these steps to set up and run the React Native mobile application:
 ## Additional Resources
 
 - For further assistance, refer to the official React Native documentation or reach out to the project maintainers.
+- **Don't forget to set up Pusher and Flespi API.**
