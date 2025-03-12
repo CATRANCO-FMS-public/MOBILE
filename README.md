@@ -6,16 +6,9 @@ This app is designed for Dispatchers. Their account credentials, which include t
 
 ## Application Preview
 
-<div style="display: flex; justify-content: space-around;">
-  <div style="text-align: center;">
-    <img src="assets/images/login.jpg" alt="Login Screen" width="300"/>
-    <p>*Login screen of the TransitTrack Mobile Application.*</p>
-  </div>
-  <div style="text-align: center;">
-    <img src="assets/images/dashboard.jpg" alt="Dashboard" width="300"/>
-    <p>*Dashboard view for dispatchers.*</p>
-  </div>
-</div>
+| ![Login Screen](assets/images/login.jpg) | ![Dashboard](assets/images/dashboard.jpg) |
+|:----------------------------------------:|:----------------------------------------:|
+| *Login screen of the TransitTrack Mobile Application.* | *Dashboard view for dispatchers.* |
 
 ## Getting Started
 
