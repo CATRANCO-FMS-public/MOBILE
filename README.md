@@ -4,6 +4,14 @@
 
 This app is designed for Dispatchers. Their account credentials, which include the username and password on the mobile application, follow the format: `Surname_DateHired`. For example, if the surname is "Paler" and the date hired is March 12, 2025, the credentials would be `Paler_031225`.
 
+## Application Preview
+
+![Login Screen](/assets/images/login_screen.png)
+*Login screen of the TransitTrack Mobile Application.*
+
+![Dashboard](/assets/images/dashboard.png)
+*Dashboard view for dispatchers.*
+
 ## Getting Started
 
 Follow these steps to set up and run the React Native mobile application:
