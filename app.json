@@ -1,5 +1,10 @@
 {
   "expo": {
+    "splash": {
+      "image": "./assets/images/splashscreen_logo.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
     "name": "TransitTrack",
     "slug": "TransitTrack-app",
     "version": "1.0.0",
