@@ -80,4 +80,4 @@ Follow these steps to set up and run the React Native mobile application:
 ## Additional Resources
 
 - For further assistance, refer to the official React Native documentation or reach out to the project maintainers.
-- **Don't forget to set up Pusher and Flespi API.**
+- **Don't forget to set up [Pusher](https://pusher.com/) and [Flespi](https://flespi.io/) API.**
