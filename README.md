@@ -66,28 +66,3 @@ Follow these steps to set up and run the React Native mobile application:
 ## Additional Resources
 
 - For further assistance, refer to the official React Native documentation or reach out to the project maintainers.
-
-```sh
-open the terminal and run the following command:
-
-# Go the the Directory
-cd CATRANCO-FMS-Mobile
-
-# Open the IDE
-code .
-
-# Install the dependencies
-npm install
-
-# Download the Android resources, copy and paste to the folder
-- (https://drive.google.com/drive/folders/1xGtj5Cvj1N0QaSIy9-tqpopmvlecr-1_?usp=sharing)
-- Must configure the android/app/src/main/AndroidManifest.xml file to include the google maps key
-
-# change the apiUrl to your wifi IPV4 address located at constants->apiURL
-e.g. http://192.168.1.100:8000 -> change to your own ip address
-
-# optional:  build the app using eas build development
-eas build --profile development --platform android
-
-# start the app
-npm start
