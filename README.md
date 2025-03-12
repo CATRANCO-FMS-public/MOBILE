@@ -1,20 +1,22 @@
-# Welcome to TransitTrack Mobile Application 👋
+# **Welcome to TransitTrack Mobile Application** 👋
 
-## About the Application
+## **About the Application**
 
 This app is designed for Dispatchers. Their account credentials, which include the username and password on the mobile application, follow the format: `Surname_DateHired`. For example, if the surname is "Paler" and the date hired is March 12, 2025, the credentials would be `Paler_031225`.
 
-## Application Preview
+The web application handles the account creation. As the admin starts inputting their employee credentials, it will automatically create their accounts.
+
+## **Application Preview**
 
 | ![Login Screen](assets/images/login.jpg) | ![Dashboard](assets/images/dashboard.jpg) |
 |:----------------------------------------:|:----------------------------------------:|
 | *Login screen of the TransitTrack Mobile Application.* | *Dashboard view for dispatchers.* |
 
-## Getting Started
+## **Getting Started**
 
 Follow these steps to set up and run the React Native mobile application:
 
-### Prerequisites
+### **Prerequisites**
 
 - Ensure you have Node.js and npm installed on your machine.
 - Install an IDE like Visual Studio Code.
