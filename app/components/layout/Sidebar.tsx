@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+
 import {
   View,
   Text,
@@ -8,17 +9,20 @@ import {
   Image,
   Modal
 } from "react-native";
+
 import Icon from "react-native-vector-icons/Ionicons";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useFocusEffect } from "expo-router";
+
+import renderImage from "@/constants/renderImage/renderImage";
+
 import { logout } from "@/services/authentication/authServices";
 import { viewProfile } from "@/services/profile/profileServices";
-import renderImage from "@/constants/renderImage/renderImage";
-import { useFocusEffect } from "expo-router";
 
 const Sidebar = ({ isVisible, onClose }) => {
   const [username, setUsername] = useState(null);
-  const [activeMenu, setActiveMenu] = useState("/(tabs)/dispatch"); // Default active menu
+  const [activeMenu, setActiveMenu] = useState("/(tabs)/dispatch-management/page"); // Default active menu
   const [imageUrl, setImageUrl] = useState(null);
   const [isLogoutModalVisible, setLogoutModalVisible] = useState(false);
   const router = useRouter();
@@ -79,7 +83,7 @@ const Sidebar = ({ isVisible, onClose }) => {
     // Cleanup function to clear the active menu on unmount
     return () => {
       AsyncStorage.removeItem("activeMenu");
-      setActiveMenu("/(tabs)/dispatch");
+      setActiveMenu("/(tabs)/dispatch-management/page");
     };
   }, []);
   
@@ -146,21 +150,21 @@ const Sidebar = ({ isVisible, onClose }) => {
             <TouchableOpacity
               style={[
                 styles.menuItem,
-                activeMenu === "/(tabs)/dispatch" && styles.activeMenuItem,
+                activeMenu === "/(tabs)/dispatch-management/page" && styles.activeMenuItem,
               ]}
-              onPress={() => handleMenuClick("/(tabs)/dispatch")}
+              onPress={() => handleMenuClick("/(tabs)/dispatch-management/page")}
             >
-              <View style={[styles.menuTextContainer, activeMenu === "/(tabs)/dispatch" && styles.activeMenuTextContainer]}>
+              <View style={[styles.menuTextContainer, activeMenu === "/(tabs)/dispatch-management/page" && styles.activeMenuTextContainer]}>
                 <Icon
                   name="navigate"
                   size={20}
-                  color={activeMenu === "/(tabs)/dispatch" ? "#3b82f6" : "#333"}
-                  style={[styles.menuIcon, activeMenu === "/(tabs)/dispatch" && styles.activeMenuIcon]}
+                  color={activeMenu === "/(tabs)/dispatch-management/page" ? "#3b82f6" : "#333"}
+                  style={[styles.menuIcon, activeMenu === "/(tabs)/dispatch-management/page" && styles.activeMenuIcon]}
                 />
                 <Text
                   style={[
                     styles.menuText,
-                    activeMenu === "/(tabs)/dispatch" && styles.activeMenuText,
+                    activeMenu === "/(tabs)/dispatch-management/page" && styles.activeMenuText,
                   ]}
                 >
                   Dispatch Management
@@ -172,21 +176,21 @@ const Sidebar = ({ isVisible, onClose }) => {
             <TouchableOpacity
               style={[
                 styles.menuItem,
-                activeMenu === "/(tabs)/overspeedHistory" && styles.activeMenuItem,
+                activeMenu === "/(tabs)/overspeeding-history/page" && styles.activeMenuItem,
               ]}
-              onPress={() => handleMenuClick("/(tabs)/overspeedHistory")}
+              onPress={() => handleMenuClick("/(tabs)/overspeeding-history/page")}
             >
-              <View style={[styles.menuTextContainer, activeMenu === "/(tabs)/overspeedHistory" && styles.activeMenuTextContainer]}>
+              <View style={[styles.menuTextContainer, activeMenu === "/(tabs)/overspeeding-history/page" && styles.activeMenuTextContainer]}>
                 <Icon
                   name="speedometer"
                   size={20}
-                  color={activeMenu === "/(tabs)/overspeedHistory" ? "#3b82f6" : "#333"}
-                  style={[styles.menuIcon, activeMenu === "/(tabs)/overspeedHistory" && styles.activeMenuIcon]}
+                  color={activeMenu === "/(tabs)/overspeeding-history/page" ? "#3b82f6" : "#333"}
+                  style={[styles.menuIcon, activeMenu === "/(tabs)/overspeeding-history/page" && styles.activeMenuIcon]}
                 />
                 <Text
                   style={[
                     styles.menuText,
-                    activeMenu === "/(tabs)/overspeedHistory" && styles.activeMenuText,
+                    activeMenu === "/(tabs)/overspeeding-history/page" && styles.activeMenuText,
                   ]}
                 >
                   Overspeeding History
@@ -198,21 +202,21 @@ const Sidebar = ({ isVisible, onClose }) => {
             <TouchableOpacity
               style={[
                 styles.menuItem,
-                activeMenu === "/(tabs)/DispatchSettings" && styles.activeMenuItem,
+                activeMenu === "/(tabs)/interval-settings/page" && styles.activeMenuItem,
               ]}
-              onPress={() => handleMenuClick("/(tabs)/DispatchSettings")}
+              onPress={() => handleMenuClick("/(tabs)/interval-settings/page")}
             >
-              <View style={[styles.menuTextContainer, activeMenu === "/(tabs)/DispatchSettings" && styles.activeMenuTextContainer]}>
+              <View style={[styles.menuTextContainer, activeMenu === "/(tabs)/interval-settings/page" && styles.activeMenuTextContainer]}>
                 <Icon
                   name="settings"
                   size={20}
-                  color={activeMenu === "/(tabs)/DispatchSettings" ? "#3b82f6" : "#333"}
-                  style={[styles.menuIcon, activeMenu === "/(tabs)/DispatchSettings" && styles.activeMenuIcon]}
+                  color={activeMenu === "/(tabs)/interval-settings/page" ? "#3b82f6" : "#333"}
+                  style={[styles.menuIcon, activeMenu === "/(tabs)/interval-settings/page" && styles.activeMenuIcon]}
                 />
                 <Text
                   style={[
                     styles.menuText,
-                    activeMenu === "/(tabs)/DispatchSettings" && styles.activeMenuText,
+                    activeMenu === "/(tabs)/interval-settings/page" && styles.activeMenuText,
                   ]}
                 >
                   Interval Setting
@@ -224,21 +228,21 @@ const Sidebar = ({ isVisible, onClose }) => {
             <TouchableOpacity
               style={[
                 styles.menuItem,
-                activeMenu === "/(tabs)/accountSettings" && styles.activeMenuItem,
+                activeMenu === "/(tabs)/account-settings/page" && styles.activeMenuItem,
               ]}
-              onPress={() => handleMenuClick("/(tabs)/accountSettings")}
+              onPress={() => handleMenuClick("/(tabs)/account-settings/page")}
             >
-              <View style={[styles.menuTextContainer, activeMenu === "/(tabs)/accountSettings" && styles.activeMenuTextContainer]}>
+              <View style={[styles.menuTextContainer, activeMenu === "/(tabs)/account-settings/page" && styles.activeMenuTextContainer]}>
                 <Icon
                   name="person"
                   size={20}
-                  color={activeMenu === "/(tabs)/accountSettings" ? "#3b82f6" : "#333"}
-                  style={[styles.menuIcon, activeMenu === "/(tabs)/accountSettings" && styles.activeMenuIcon]}
+                  color={activeMenu === "/(tabs)/account-settings/page" ? "#3b82f6" : "#333"}
+                  style={[styles.menuIcon, activeMenu === "/(tabs)/account-settings/page" && styles.activeMenuIcon]}
                 />
                 <Text
                   style={[
                     styles.menuText,
-                    activeMenu === "/(tabs)/accountSettings" && styles.activeMenuText,
+                    activeMenu === "/(tabs)/account-settings/page" && styles.activeMenuText,
                   ]}
                 >
                   Account Settings

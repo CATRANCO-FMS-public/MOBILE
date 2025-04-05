@@ -17,7 +17,7 @@ const locations = [
         { latitude: 8.4666278, longitude: 124.5854141 },
         { latitude: 8.4666686, longitude: 124.5854298 },
       ],
-      icon: require("../../assets/images/canitoan.png"),
+      icon: require("../../../assets/images/canitoan.png"),
     },
     {
       id: 2,
@@ -37,7 +37,7 @@ const locations = [
         { latitude: 8.4760076, longitude: 124.6113486 },
         { latitude: 8.4760355, longitude: 124.6112278 },
       ],
-      icon: require("../../assets/images/silver_creek.png"),
+      icon: require("../../../assets/images/silver_creek.png"),
     },
     {
       id: 3,
@@ -80,7 +80,7 @@ const locations = [
         { latitude: 8.4755559, longitude: 124.6500217 },
         { latitude: 8.4755522, longitude: 124.6500687 },
       ],
-      icon: require("../../assets/images/cogon.png"),
+      icon: require("../../../assets/images/cogon.png"),
     },
   ];  
 

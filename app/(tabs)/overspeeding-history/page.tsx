@@ -9,7 +9,7 @@ import {
   Modal,
 } from "react-native";
 import { Table, Row } from "react-native-reanimated-table";
-import Sidebar from "../components/Sidebar";
+import Sidebar from "../../components/layout/Sidebar";
 import Icon from "react-native-vector-icons/Ionicons";
 import { Calendar } from "react-native-calendars";
 import * as Print from "expo-print";

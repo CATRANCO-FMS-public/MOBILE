@@ -1,4 +1,5 @@
-import React, { useRef, useState, useEffect, useCallback } from "react";
+import React, { useRef, useState, useEffect } from "react";
+
 import {
   View,
   Text,
@@ -8,26 +9,30 @@ import {
   ToastAndroid,
   Image
 } from "react-native";
+
 import { useRouter } from "expo-router";
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE  } from "react-native-maps";
 import Icon from "react-native-vector-icons/Ionicons";
-import Sidebar from "../components/Sidebar";
-import DispatchModal from "../components/DispatchModal";
-import AlleyModal from "../components/AlleyModal";
-import echo from "../../constants/utils/pusherConfig"; 
 import RNPickerSelect from 'react-native-picker-select';
-import BusList from "../components/Buslist";
-import Timer from "../components/Timer";
-import SwipeToRefresh from "../components/Refresh";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from "expo-router";
+
+import Sidebar from "../../components/layout/Sidebar";
+import DispatchModal from "../../components/dispatch/DispatchModal";
+import AlleyModal from "../../components/dispatch/AlleyModal";
+import BusList from "../../components/dispatch/Buslist";
+import Timer from "../../components/dispatch/Timer";
+import SwipeToRefresh from "../../components/map/Refresh";
+import OverspeedAlert from "../../components/overspeed/OverspeedAlert";
+
+import locations from "../../components/map/locations";
+import echo from "../../../constants/utils/pusherConfig"; 
+
 import { endDispatch } from "@/services/dispatch/dispatchServices";
 import { createOverspeedRecord } from "@/services/overspeedTracking/overspeedServices";
-import SimulatedMarker from "../components/simulatedMarker";
-import { routeData } from "../components/routeData";
-import locations from "../components/locations";
-import OverspeedAlert from "../components/OverspeedAlert";
-import { resetBlockedLocationsForAllVehicles } from "@/services/resetBlockedLocations/resetBlockedLocationsServices";
+// import SimulatedMarker from "../../components/map/simulatedMarker";
+// import { routeData } from "../../components/data/routeData";
+// import { resetBlockedLocationsForAllVehicles } from "@/services/resetBlockedLocations/resetBlockedLocationsServices";
 
 const App = () => {
   const [sidebarVisible, setSidebarVisible] = useState(false);
@@ -39,7 +44,7 @@ const App = () => {
   const [trackersData, setTrackersData] = useState([]);
   const [paths, setPaths] = useState({});
   const [busIcons, setBusIcons] = useState<{ [tracker_ident: string]: any }>({
-    "default": Image.resolveAssetSource(require("../../assets/images/bus_idle.png")),
+    "default": Image.resolveAssetSource(require("../../../assets/images/bus_idle.png")),
   });
   const [renderMap, setRenderMap] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -240,9 +245,9 @@ const App = () => {
 
                 // Determine the icon path based on dispatch_log status
                 if (dispatch_log.status === "on road") {
-                  iconPath = Image.resolveAssetSource(require("../../assets/images/bus_on_road.png"));
+                  iconPath = Image.resolveAssetSource(require("../../../assets/images/bus_on_road.png"));
                 } else if (dispatch_log.status === "on alley") {
-                  iconPath = Image.resolveAssetSource(require("../../assets/images/bus_on_alley.png"));
+                  iconPath = Image.resolveAssetSource(require("../../../assets/images/bus_on_alley.png"));
                 }
 
                 // If an icon path was determined, update busIcons state
@@ -263,7 +268,7 @@ const App = () => {
                 setBusIcons((prevIcons) => {
                   const updatedIcons = {
                     ...prevIcons,
-                    [tracker_ident]: Image.resolveAssetSource(require("../../assets/images/bus_idle.png")),
+                    [tracker_ident]: Image.resolveAssetSource(require("../../../assets/images/bus_idle.png")),
                   };
 
                   // Save updated busIcons to AsyncStorage
@@ -526,7 +531,7 @@ const App = () => {
               <Icon name="menu" size={25} color="black" />
             </TouchableOpacity>
             <Text style={styles.date}>{currentDate}</Text>
-            <TouchableOpacity style={styles.histogramIcon} onPress={() => {router.push("/(tabs)/history")}}>
+            <TouchableOpacity style={styles.histogramIcon} onPress={() => {router.push("/(tabs)/dispatch-management/history/page")}}>
               <Icon name="bar-chart-outline" size={25} color="black" />
             </TouchableOpacity>
           </>

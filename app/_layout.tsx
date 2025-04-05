@@ -1,8 +1,11 @@
 import React from "react";
+
 import { LogBox } from "react-native";
+
 import { Stack } from "expo-router";
-import { AuthProvider } from "@/services/authentication/authContext";
 import { SafeAreaView } from "react-native-safe-area-context";
+
+import { AuthProvider } from "@/services/authentication/authContext";
 
 export default function RootLayout() {
   LogBox.ignoreAllLogs();

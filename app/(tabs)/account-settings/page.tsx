@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+
 import {
   View,
   Text,
@@ -11,13 +12,22 @@ import {
   ToastAndroid,
   ActivityIndicator
 } from "react-native";
+
 import Icon from "react-native-vector-icons/Ionicons";
-import Sidebar from "../components/Sidebar";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+import renderImage from "@/constants/renderImage/renderImage";
+
+import Sidebar from "../../components/layout/Sidebar";
+
 import { getUser, updateAccount } from "@/services/authentication/authServices";
 import { viewProfile } from "@/services/profile/profileServices";
 import { updateProfileImage, openImagePicker } from "@/services/profile/updateProfile";
-import renderImage from "@/constants/renderImage/renderImage";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+
+interface UpdateData {
+  email?: string;
+  password?: string;
+}
 
 const accountSettings = () => {
   // State for managing profile data
@@ -92,11 +102,11 @@ const accountSettings = () => {
   const handleSave = async () => {
     setLoading(true);
     try {
-      const updateData = {};
-
+      const updateData: UpdateData = {};
+      
       if (email) {
         updateData.email = email;
-        await AsyncStorage.setItem('email', email); // Save updated email to AsyncStorage
+        await AsyncStorage.setItem('email', email);
       }
 
       if (Object.keys(updateData).length === 0) {

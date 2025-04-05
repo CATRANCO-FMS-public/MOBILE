@@ -1,12 +1,15 @@
 import React, { useState, useEffect, forwardRef, useImperativeHandle, useCallback } from "react";
+
 import { View, Text, TouchableOpacity, StyleSheet, Modal, Alert } from "react-native";
+
 import Icon from "react-native-vector-icons/Ionicons";
-import { getAllTimers } from "@/services/timer/timersServices";
 import { useFocusEffect } from "expo-router";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Audio } from "expo-av";
 import * as Notifications from 'expo-notifications';
 import BackgroundTimer from 'react-native-background-timer';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+import { getAllTimers } from "@/services/timer/timersServices";
 
 const Timer = forwardRef((props, ref) => {
   const [timer, setTimer] = useState(0); // Timer in seconds

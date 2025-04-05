@@ -1,5 +1,6 @@
 import React from "react";
-import { ScrollView, RefreshControl, StyleSheet, View } from "react-native";
+
+import { ScrollView, RefreshControl, StyleSheet } from "react-native";
 
 interface SwipeToRefreshProps {
   refreshing: boolean;

@@ -1,20 +1,24 @@
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity, Modal, StyleSheet, Alert, ActivityIndicator } from "react-native";
-import Icon from "react-native-vector-icons/Ionicons";
-import { startAlley } from "@/services/dispatch/dispatchServices";
 
-interface AlleyModalProps {
+import { View, Text, TouchableOpacity, Modal, StyleSheet, ToastAndroid, ActivityIndicator } from "react-native";
+
+import Icon from "react-native-vector-icons/Ionicons";
+
+import { startDispatch, endAlley } from "@/services/dispatch/dispatchServices"; 
+
+interface DispatchModalProps {
   isVisible: boolean;
   onClose: () => void;
-  selectedBus: { vehicle_id: string; status: string; vehicle_assignment_id: number } | null;
-  onConfirm
+  selectedBus: { vehicle_id: string; status: string; vehicle_assignment_id: number; dispatch_logs_id?: number } | null;
+  onConfirm: () => void;
 }
 
-const AlleyModal: React.FC<AlleyModalProps> = ({
+const DispatchModal: React.FC<DispatchModalProps> = ({
   isVisible,
   onClose,
   selectedBus,
   onConfirm,
+  timerRef,
 }) => {
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -24,38 +28,49 @@ const AlleyModal: React.FC<AlleyModalProps> = ({
   };
 
   const handleConfirm = async () => {
-
+    if (!selectedBus) return;
+  
     setLoading(true);
-
-    if (!selectedOption) {
-      Alert.alert("Error", "Please select an alley to start.");
-      return;
-    }
-
-    if (!selectedBus) {
-      Alert.alert("Error", "No bus selected.");
-      return;
-    }
-
-    const data = {
-      route: selectedOption, // The selected alley option
-      vehicle_assignment_id: selectedBus.vehicle_assignment_id, // The vehicle assignment ID
-    };
-
+  
     try {
-      // Call the startAlley service
-      const response = await startAlley(data);
-      // On success, you can trigger a callback to reset the timer, or show a success message
-      console.log("Alley started successfully:", response);
+      if (timerRef?.current?.isRunning()) {
+        setLoading(false);
+        ToastAndroid.show("Cannot dispatch until the timer is completed.", ToastAndroid.BOTTOM);
+        return;
+      }
+  
+      // Ensure the vehicle is "on alley" before proceeding
+      if (selectedBus.status !== "on alley" || !selectedBus.dispatch_logs_id) {
+        setLoading(false);
+        ToastAndroid.show(
+          "The bus must be on alley before it can be dispatched.",
+          ToastAndroid.BOTTOM
+        );
+        return;
+      }
+  
+      // End the alley
+      await endAlley(selectedBus.dispatch_logs_id);
+  
+      // Start the dispatch
+      const data = {
+        route: selectedOption,
+        vehicle_assignment_id: selectedBus.vehicle_assignment_id,
+      };
+      await startDispatch(data);
+  
       onConfirm();
-      onClose(); // Close the modal
+      onClose();
     } catch (error) {
-      console.error("Error starting alley:", error);
-      Alert.alert("Error", "Failed to start the alley. Please try again.");
+      console.error("Error handling dispatch confirm:", error);
+      ToastAndroid.show(
+        "An unexpected error occurred. Please try again later.",
+        ToastAndroid.BOTTOM
+      );
     } finally {
       setLoading(false);
     }
-  };
+  };  
 
   return (
     <Modal
@@ -82,10 +97,10 @@ const AlleyModal: React.FC<AlleyModalProps> = ({
             </View>
           </View>
 
-          {/* Alley Label */}
-          <Text style={styles.dispatchLabel}>Alley On:</Text>
+          {/* Dispatch Label */}
+          <Text style={styles.dispatchLabel}>Dispatch Going To:</Text>
 
-          {/* Alley Options */}
+          {/* Dispatch Options */}
           <View style={styles.dispatchOptions}>
             {["Canitoan", "Silver Creek", "Cogon"].map((option) => (
               <TouchableOpacity
@@ -109,7 +124,7 @@ const AlleyModal: React.FC<AlleyModalProps> = ({
             <TouchableOpacity
               style={styles.dispatchButton}
               onPress={handleConfirm}
-              disabled={loading}
+              disabled={loading} // Disable button when loading
             >
               {loading ? (
                   <ActivityIndicator size="small" color="#FFF" />
@@ -176,16 +191,16 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   optionButton: {
-    backgroundColor: "#FFA500",
+    backgroundColor: "#ADFF2F", // Default background color
     paddingVertical: 10,
     paddingHorizontal: 15,
     borderRadius: 5,
     elevation: 3,
     borderWidth: 1,
-    borderColor: "transparent",
+    borderColor: "transparent", // Default border color
   },
   selectedOptionButton: {
-    borderColor: "red",
+    borderColor: "#3b82f6", // Red border for the selected option
     borderWidth: 2,
   },
   optionText: {
@@ -229,4 +244,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default AlleyModal;
+export default DispatchModal;

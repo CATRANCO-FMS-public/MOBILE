@@ -1,4 +1,5 @@
 import React, { useState, useContext } from "react";
+
 import {
   View,
   Text,
@@ -13,9 +14,11 @@ import {
   StyleSheet,
   ToastAndroid,
 } from "react-native";
+
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { Ionicons } from "react-native-vector-icons";
+
 import { AuthContext } from "@/services/authentication/authContext";
 
 const { width, height } = Dimensions.get("window");
@@ -41,7 +44,7 @@ const LoginScreen = () => {
       const userData = await signIn(username, password); // Calls signIn in AuthContext
   
       // Redirect to dispatcher screen
-      router.push("/(tabs)/dispatch");
+      router.push("/(tabs)/dispatch-management/page");
       console.log("Successfully Logged In:", userData);
     } catch (error) {
       ToastAndroid.show("Invalid credentials, please try again.", ToastAndroid.BOTTOM);

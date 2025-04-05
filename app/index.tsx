@@ -1,7 +1,9 @@
 import React, { useEffect, useContext } from "react";
-import { View, Image, Dimensions, ActivityIndicator } from "react-native";
+
+import { Image, Dimensions, ActivityIndicator } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
+
 import { AuthContext } from "@/services/authentication/authContext";
 
 export default function SplashScreen() {
@@ -13,7 +15,7 @@ export default function SplashScreen() {
 
     const timeout = setTimeout(() => {
       if (user) {
-        router.replace("/(tabs)/dispatch"); // Navigate to authenticated screen
+        router.replace("/(tabs)/dispatch-management/page");
       } else {
         router.replace("/auth/login"); // Navigate to login screen
       }

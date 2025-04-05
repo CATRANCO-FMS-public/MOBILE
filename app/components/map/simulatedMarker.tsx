@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+
 import { Marker, Polyline } from "react-native-maps";
 
 const SimulatedMarker = ({ title, description, initialIcon, movingIcon, routeData }) => {

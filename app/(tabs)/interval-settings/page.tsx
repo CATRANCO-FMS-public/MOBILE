@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+
 import {
   View,
   Text,
@@ -9,16 +10,19 @@ import {
   Alert,
   ActivityIndicator
 } from "react-native";
-import Sidebar from "../components/Sidebar";
+
 import Icon from "react-native-vector-icons/Ionicons";
-import TimerEdit from "../components/DispatchEdit";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+import Sidebar from "../../components/layout/Sidebar";
+import TimerEdit from "../../components/interval/TimerEdit";
+
 import {
   getAllTimers,
   createTimer,
   updateTimer,
   deleteTimer,
 } from "@/services/timer/timersServices";
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface Interval {
   id: string;

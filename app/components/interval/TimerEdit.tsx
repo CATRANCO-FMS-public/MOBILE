@@ -1,15 +1,16 @@
 import React, { useState } from "react";
+
 import {
   View,
   Text,
   TextInput,
-  Button,
   StyleSheet,
   Modal,
   TouchableOpacity,
   ActivityIndicator,
   ToastAndroid,
 } from "react-native";
+
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 
 interface TimerEditProps {
