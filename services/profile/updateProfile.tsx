@@ -2,7 +2,7 @@ import api from '@/constants/axiosInstance/axiosInstanceFORM';
 import * as ImagePicker from 'expo-image-picker';
 
 // Function to update the user's profile image
-export const updateProfileImage = async (imageUri) => {
+export const updateProfileImage = async (imageUri: string) => {
     try {
         const formData = new FormData();
         
@@ -14,7 +14,7 @@ export const updateProfileImage = async (imageUri) => {
                 uri: imageUri,
                 name: `profile_image.${fileType}`,
                 type: `image/${fileType}`,
-            });
+            } as any);
 
             console.log("FormData:", formData); // Log the formData to check if image is appended correctly
         }
@@ -27,7 +27,7 @@ export const updateProfileImage = async (imageUri) => {
     }
 };
   
-export const openImagePicker = async (setProfileImage) => {
+export const openImagePicker = async (setProfileImage: (imageUri: string) => void) => {
     // Ask for permission to access the media library
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     console.log("Permission granted:", permission.granted); // Log permission status

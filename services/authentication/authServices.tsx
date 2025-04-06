@@ -2,7 +2,7 @@ import api from "@/constants/axiosInstance/axiosInstanceJSON";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Function to register a new user
-export const signup = async (userData) => {
+export const signup = async (userData: any) => {
     try {
         await api.post('/user/register', userData);
     } catch (error) {
@@ -12,7 +12,7 @@ export const signup = async (userData) => {
 };
 
 // Function to log in a user and store their token
-export const login = async (username, password) => {
+export const login = async (username: string, password: string) => {
     try {
         const response = await api.post('/user/login', { username, password });
         const { token } = response.data;
@@ -25,7 +25,7 @@ export const login = async (username, password) => {
 };
 
 // Function to request a password reset
-export const resetPassword = async (email) => {
+export const resetPassword = async (email: string) => {
     try {
         const response = await api.post('/user/password/forgot', { email });
         return response.data;
@@ -47,7 +47,7 @@ export const getUser = async () => {
 };
 
 // Function to update the logged-in user's account details
-export const updateAccount = async (userData) => {
+export const updateAccount = async (userData: any) => {
     try {
         await api.patch('/user/update', userData);
     } catch (error) {

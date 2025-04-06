@@ -2,10 +2,11 @@ import React, { useState, useEffect, forwardRef, useImperativeHandle, useCallbac
 
 import { View, Text, TouchableOpacity, StyleSheet, Modal, Alert } from "react-native";
 
-import { Ionicons } from "@expo/vector-icons";
+import Icon from "react-native-vector-icons/Ionicons";
 import { useFocusEffect } from "expo-router";
 import { Audio } from "expo-av";
 import * as Notifications from 'expo-notifications';
+import BackgroundTimer from 'react-native-background-timer';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { getAllTimers } from "@/services/timer/timersServices";
@@ -30,6 +31,7 @@ const Timer = forwardRef((props, ref) => {
     },
     stopTimer: () => {
       setIsRunning(false); // Stop the timer
+      BackgroundTimer.clearInterval(timerInterval);
     },
     isRunning: () => isRunning, // Expose isRunning state
     saveTimerState: saveTimerState, // Expose saveTimerState to the parent
@@ -150,18 +152,18 @@ const Timer = forwardRef((props, ref) => {
     }
   }, [selectedInterval, isRunning]);
 
-  // Handle timer countdown
+  // Handle timer countdown in the background
   useEffect(() => {
-    let timerInterval: NodeJS.Timeout | null = null;
+    let timerInterval: any;
 
     if (isRunning) {
-      timerInterval = setInterval(() => {
+      timerInterval = BackgroundTimer.setInterval(() => {
         setTimer((prev) => {
           if (prev === 1) {
             // Stop timer and reset to the selected interval
-            setIsRunning(false);
+            setIsRunning(false); // Stop the timer
             playSound();
-            return selectedInterval ? selectedInterval.minutesInterval * 60 : 0;
+            return selectedInterval ? selectedInterval.minutesInterval * 60 : 0; // Reset timer
           }
           return prev - 1;
         });
@@ -169,9 +171,9 @@ const Timer = forwardRef((props, ref) => {
     }
 
     return () => {
-      if (timerInterval) clearInterval(timerInterval);
+      if (timerInterval) BackgroundTimer.clearInterval(timerInterval); // Clean up background timer
     };
-  }, [isRunning, selectedInterval]);
+  }, [isRunning, timer, selectedInterval]);
 
   // Persist timer state to AsyncStorage
   const saveTimerState = async () => {
@@ -271,12 +273,12 @@ const Timer = forwardRef((props, ref) => {
       )}
 
       <TouchableOpacity onPress={toggleSettings} style={styles.settingsButton}>
-        <Ionicons name="settings-outline" size={30} color="black" />
+        <Icon name="settings-outline" size={30} color="black" />
       </TouchableOpacity>
 
       {/* Reset Icon Button */}
       <TouchableOpacity onPress={resetTimer} style={styles.resetButton}>
-        <Ionicons name="reload" size={30} color="black" />
+        <Icon name="reload" size={30} color="black" />
       </TouchableOpacity>
 
       {/* Settings Modal */}
@@ -290,7 +292,7 @@ const Timer = forwardRef((props, ref) => {
           <View style={styles.modalContainer}>
             {/* X Button to Close Modal */}
             <TouchableOpacity onPress={toggleSettings} style={styles.closeButton}>
-              <Ionicons name="close" size={30} color="black" />
+              <Icon name="close" size={30} color="black" />
             </TouchableOpacity>
 
             <Text style={styles.modalTitle}>Select Interval Type</Text>

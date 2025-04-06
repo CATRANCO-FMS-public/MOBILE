@@ -12,7 +12,7 @@ interface TimerContextType {
 export const TimerContext = createContext<TimerContextType | undefined>(undefined);
 
 // TimerContextProvider component
-export const TimerContextProvider: React.FC = ({ children }) => {
+export const TimerContextProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [timer, setTimerState] = useState(0); // Initial timer state
   const [isRunning, setIsRunning] = useState(false);
 
