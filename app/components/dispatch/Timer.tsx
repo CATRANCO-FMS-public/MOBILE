@@ -161,10 +161,10 @@ const Timer = forwardRef((props, ref) => {
     if (isRunning) {
       timerInterval = setInterval(() => {
         setTimer((prev) => {
-          if (prev === 1) {
-            // Stop timer and reset to the selected interval
+          if (prev <= 1) {
             setIsRunning(false);
             playSound();
+            // Reset to the selected interval
             return selectedInterval ? selectedInterval.minutesInterval * 60 : 0;
           }
           return prev - 1;
@@ -173,41 +173,59 @@ const Timer = forwardRef((props, ref) => {
     }
 
     return () => {
-      if (timerInterval) clearInterval(timerInterval);
+      if (timerInterval) {
+        clearInterval(timerInterval);
+      }
     };
   }, [isRunning, selectedInterval]);
 
-  // Persist timer state to AsyncStorage
-  const saveTimerState = async () => {
-    if (isRunning) {
-      await AsyncStorage.setItem("timer", JSON.stringify({ timer, isRunning }));
-    } else {
-      // If the timer is not running, remove the state from AsyncStorage
-      await AsyncStorage.removeItem("timer");
-    }
-  };
-
-  // Retrieve timer state from AsyncStorage
+  // Modify loadTimerState to handle edge cases
   const loadTimerState = async () => {
     try {
       const isReset = await AsyncStorage.getItem("timer_reset");
       if (isReset === "true") {
-        // If the timer was reset, don't load any saved state
-        await AsyncStorage.removeItem("timer_reset"); // Clear the reset flag
+        await AsyncStorage.removeItem("timer_reset");
         return;
       }
   
       const savedTimerState = await AsyncStorage.getItem("timer");
       if (savedTimerState) {
         const { timer: savedTimer, isRunning: savedIsRunning } = JSON.parse(savedTimerState);
-        setTimer(Math.floor(savedTimer));
-        setIsRunning(savedIsRunning);
+        
+        // Check if the saved timer is about to finish (less than or equal to 1 second)
+        if (savedTimer <= 1 && savedIsRunning) {
+          // Reset the timer to the selected interval instead of restoring the almost-finished state
+          if (selectedInterval) {
+            setTimer(selectedInterval.minutesInterval * 60);
+            setIsRunning(false); // Don't auto-start the timer
+            // Clean up the saved state
+            await AsyncStorage.removeItem("timer");
+            ToastAndroid.show("Timer has been reset", ToastAndroid.SHORT);
+          }
+        } else {
+          // Restore the saved state as normal
+          setTimer(Math.floor(savedTimer));
+          setIsRunning(savedIsRunning);
+        }
       }
     } catch (error) {
       console.error("Failed to load timer state:", error);
     }
   };
-  
+
+  // Modify saveTimerState to include more information
+  const saveTimerState = async () => {
+    if (isRunning && timer > 1) { // Only save if timer has more than 1 second remaining
+      await AsyncStorage.setItem("timer", JSON.stringify({ 
+        timer, 
+        isRunning,
+        selectedIntervalId: selectedInterval?.id 
+      }));
+    } else {
+      // If timer is not running or about to finish, remove the state
+      await AsyncStorage.removeItem("timer");
+    }
+  };
 
   // Use useFocusEffect to start the timer when screen is focused and restore state
   useFocusEffect(

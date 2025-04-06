@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 import {
   View,
@@ -33,7 +34,6 @@ interface Interval {
 }
 
 const ClockSetting: React.FC = () => {
-  const [intervals, setIntervals] = useState<Interval[]>([]);
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [currentInterval, setCurrentInterval] = useState<Interval>({
@@ -43,7 +43,75 @@ const ClockSetting: React.FC = () => {
     endTime: "",
     timerLimit: 0,
   });
-  const [loading, setLoading] = useState(true);
+
+  const queryClient = useQueryClient();
+
+  // Query for fetching intervals
+  const { data: intervals = [], isLoading } = useQuery({
+    queryKey: ['intervals'],
+    queryFn: async () => {
+      const response = await getAllTimers();
+      return response.timers.map((timer: any) => ({
+        id: timer.timer_id,
+        name: timer.title,
+        startTime: formatTo12Hour(timer.start_time),
+        endTime: formatTo12Hour(timer.end_time),
+        timerLimit: timer.minutes_interval,
+      }));
+    },
+    staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
+  });
+
+  // Mutation for creating/updating intervals
+  const { mutate: saveInterval } = useMutation({
+    mutationFn: async (newInterval: Interval) => {
+      const sanitizedInterval = {
+        ...newInterval,
+        start_time: newInterval.startTime.replace(/\s+/g, ' ').trim(),
+        end_time: newInterval.endTime.replace(/\s+/g, ' ').trim(),
+      };
+
+      if (sanitizedInterval.id) {
+        await updateTimer(sanitizedInterval.id, {
+          title: sanitizedInterval.name,
+          start_time: sanitizedInterval.start_time,
+          end_time: sanitizedInterval.end_time,
+          minutes_interval: sanitizedInterval.timerLimit,
+        });
+        ToastAndroid.show("Interval updated successfully!", ToastAndroid.SHORT);
+      } else {
+        await createTimer({
+          title: sanitizedInterval.name,
+          start_time: sanitizedInterval.start_time,
+          end_time: sanitizedInterval.end_time,
+          minutes_interval: sanitizedInterval.timerLimit,
+        });
+        ToastAndroid.show("New interval created successfully!", ToastAndroid.SHORT);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['intervals'] });
+      setModalVisible(false);
+    },
+    onError: (error) => {
+      console.error('Error saving interval:', error);
+      ToastAndroid.show("Failed to save the interval. Please try again.", ToastAndroid.BOTTOM);
+    },
+  });
+
+  // Mutation for deleting intervals
+  const { mutate: deleteInterval } = useMutation({
+    mutationFn: async (id: string) => {
+      await deleteTimer(id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['intervals'] });
+      ToastAndroid.show("Interval deleted successfully!", ToastAndroid.SHORT);
+    },
+    onError: () => {
+      ToastAndroid.show("Failed to delete the interval. Please try again.", ToastAndroid.BOTTOM);
+    },
+  });
 
   // Helper functions for time conversion
   const formatTo12Hour = (time: string) => {
@@ -69,60 +137,6 @@ const ClockSetting: React.FC = () => {
     return `${hour}:${minute}`;
   };
 
-  // Fetch intervals from AsyncStorage
-  const fetchStoredIntervals = async () => {
-    try {
-      const storedIntervals = await AsyncStorage.getItem("intervals");
-      if (storedIntervals) {
-        // Parse intervals from AsyncStorage
-        setIntervals(JSON.parse(storedIntervals));
-      }
-    } catch (error) {
-      console.error("Failed to fetch intervals from AsyncStorage", error);
-    }
-  };
-
-  // Fetch intervals from API
-  const fetchIntervalsFromAPI = async () => {
-    setLoading(true);
-    try {
-      const response = await getAllTimers();
-      const formattedIntervals = response.timers.map((timer: any) => ({
-        id: timer.timer_id,
-        name: timer.title,
-        startTime: formatTo12Hour(timer.start_time),
-        endTime: formatTo12Hour(timer.end_time),
-        timerLimit: timer.minutes_interval,
-      }));
-      setIntervals(formattedIntervals);
-      // Save fetched intervals to AsyncStorage
-      await AsyncStorage.setItem("intervals", JSON.stringify(formattedIntervals));
-    } catch (error) {
-      ToastAndroid.show("Failed to fetch intervals from API. Please try again.", ToastAndroid.BOTTOM);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Fetch intervals when the component mounts
-  useEffect(() => {
-    fetchStoredIntervals();
-  }, []);
-
-  // If no intervals are in AsyncStorage, fetch from API
-  useEffect(() => {
-    if (intervals.length === 0) {
-      fetchIntervalsFromAPI();
-    }
-  }, [intervals]);
-
-  // Save updated intervals to AsyncStorage whenever intervals state changes
-  useEffect(() => {
-    if (intervals.length > 0) {
-      AsyncStorage.setItem("intervals", JSON.stringify(intervals));
-    }
-  }, [intervals]);
-
   const handleAddInterval = () => {
     setCurrentInterval({
       id: "",
@@ -135,49 +149,17 @@ const ClockSetting: React.FC = () => {
   };
 
   const handleEditInterval = (id: string) => {
-    const intervalToEdit = intervals.find((interval) => interval.id === id);
+    const intervalToEdit = (intervals as Interval[]).find((interval: Interval) => interval.id === id);
     if (intervalToEdit) {
       setCurrentInterval(intervalToEdit);
       setModalVisible(true);
     }
   };
 
-  const handleSaveInterval = async (newInterval: Interval) => {
-    try {
-      const sanitizedInterval = {
-        ...newInterval,
-        start_time: newInterval.startTime.replace(/\s+/g, ' ').trim(), 
-        end_time: newInterval.endTime.replace(/\s+/g, ' ').trim(),   
-      };
-  
-      console.log("Sending data:", sanitizedInterval);
-  
-      if (sanitizedInterval.id) {
-        await updateTimer(sanitizedInterval.id, {
-          title: sanitizedInterval.name,
-          start_time: sanitizedInterval.start_time,
-          end_time: sanitizedInterval.end_time,
-          minutes_interval: sanitizedInterval.timerLimit,
-        });
-        ToastAndroid.show("Interval updated successfully!", ToastAndroid.SHORT);
-      } else {
-        await createTimer({
-          title: sanitizedInterval.name,
-          start_time: sanitizedInterval.start_time,
-          end_time: sanitizedInterval.end_time,
-          minutes_interval: sanitizedInterval.timerLimit,
-        });
-        ToastAndroid.show("New interval created successfully!", ToastAndroid.SHORT);
-      }
-      
-      fetchIntervalsFromAPI();
-      setModalVisible(false);
-    } catch (error) {
-      console.error(`Error updating timer with ID ${newInterval.id}:`, error.response?.data || error.message);
-      ToastAndroid.show("Failed to save the interval. Please try again.", ToastAndroid.BOTTOM);
-    }
+  const handleSaveInterval = (newInterval: Interval) => {
+    saveInterval(newInterval);
   };
-  
+
   const handleDeleteInterval = (id: string) => {
     Alert.alert(
       "Delete Interval",
@@ -186,22 +168,7 @@ const ClockSetting: React.FC = () => {
         { text: "Cancel", style: "cancel" },
         {
           text: "Delete",
-          onPress: async () => {
-            try {
-              await deleteTimer(id);
-              
-              // Filter out the deleted interval from the state
-              const updatedIntervals = intervals.filter((interval) => interval.id !== id);
-              setIntervals(updatedIntervals);
-
-              // Save the updated intervals list back to AsyncStorage
-              await AsyncStorage.setItem("intervals", JSON.stringify(updatedIntervals));
-              
-              ToastAndroid.show("Interval deleted successfully!", ToastAndroid.SHORT);
-            } catch (error) {
-              ToastAndroid.show("Failed to delete the interval. Please try again.", ToastAndroid.BOTTOM);
-            }
-          },
+          onPress: () => deleteInterval(id),
         },
       ]
     );
@@ -217,14 +184,14 @@ const ClockSetting: React.FC = () => {
         well as add new intervals.
       </Text>
 
-      {loading ? (
+      {isLoading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#3b82f6" />
           <Text>Loading intervals...</Text>
         </View>
       ) : (
         <FlatList
-          data={intervals}
+          data={intervals as Interval[]}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
             <View style={styles.intervalItem}>
