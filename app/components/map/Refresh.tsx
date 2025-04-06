@@ -25,10 +25,13 @@ const SwipeToRefresh: React.FC<SwipeToRefreshProps> = ({
 };
 
 const styles = StyleSheet.create({
-  scrollView: {
+  container: {
+    flex: 1,
+  },
+  scrollView: {   
     position: 'absolute',
     top: 0,          
-    left: 0,         
+    left: 0,          
     right: 0,        
     zIndex: 10,      
     height: 60, 

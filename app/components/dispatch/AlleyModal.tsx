@@ -2,7 +2,7 @@ import React, { useState } from "react";
 
 import { View, Text, TouchableOpacity, Modal, StyleSheet, Alert, ActivityIndicator } from "react-native";
 
-import Icon from "react-native-vector-icons/Ionicons";
+import { Ionicons } from "@expo/vector-icons";
 
 import { startAlley } from "@/services/dispatch/dispatchServices";
 
@@ -10,7 +10,7 @@ interface AlleyModalProps {
   isVisible: boolean;
   onClose: () => void;
   selectedBus: { vehicle_id: string; status: string; vehicle_assignment_id: number } | null;
-  onConfirm
+  onConfirm: () => void;
 }
 
 const AlleyModal: React.FC<AlleyModalProps> = ({
@@ -72,7 +72,7 @@ const AlleyModal: React.FC<AlleyModalProps> = ({
           {/* Icon, Dynamic Bus Title, and Status */}
           <View style={styles.header_wrapper}>
             <View style={styles.header}>
-              <Icon name="bus" size={50} color="black" />
+              <Ionicons name="bus" size={50} color="black" />
               <View style={styles.titleWrapper}>
                 <Text style={styles.busTitle}>
                   {selectedBus?.vehicle_id || "No Bus Selected"} {/* Display selected bus */}

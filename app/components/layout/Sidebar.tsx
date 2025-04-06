@@ -10,7 +10,6 @@ import {
   Modal
 } from "react-native";
 
-import Icon from "react-native-vector-icons/Ionicons";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect } from "expo-router";
@@ -19,8 +18,9 @@ import renderImage from "@/constants/renderImage/renderImage";
 
 import { logout } from "@/services/authentication/authServices";
 import { viewProfile } from "@/services/profile/profileServices";
+import { Ionicons } from "@expo/vector-icons";
 
-const Sidebar = ({ isVisible, onClose }) => {
+const Sidebar = ({ isVisible, onClose }: { isVisible: boolean; onClose: () => void }) => {
   const [username, setUsername] = useState(null);
   const [activeMenu, setActiveMenu] = useState("/(tabs)/dispatch-management/page"); // Default active menu
   const [imageUrl, setImageUrl] = useState(null);
@@ -88,11 +88,11 @@ const Sidebar = ({ isVisible, onClose }) => {
   }, []);
   
 
-  const handleMenuClick = async (menu) => {
+  const handleMenuClick = async (menu: string) => {
     try {
       setActiveMenu(menu); // Set the clicked menu item as active
       await AsyncStorage.setItem("activeMenu", menu); // Save the active menu to AsyncStorage
-      router.push(menu); // Navigate to the selected menu
+      router.push(menu as any); // Navigate to the selected menu
     } catch (error) {
       console.error("Error saving active menu:", error);
     }
@@ -124,7 +124,7 @@ const Sidebar = ({ isVisible, onClose }) => {
         <View style={styles.sidebarContainer}>
           {/* Close Button */}
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-            <Icon name="close-outline" size={30} color="black" />
+            <Ionicons name="close-outline" size={30} color="black" />
           </TouchableOpacity>
 
           {/* Profile Section */}
@@ -138,7 +138,7 @@ const Sidebar = ({ isVisible, onClose }) => {
               />
             ) : (
               <View style={styles.imageFrame}>
-                <Icon name="person-circle-outline" size={50} color="gray" />
+                <Ionicons name="person-circle-outline" size={50} color="gray" />
               </View>
             )}
             <Text style={styles.profileName}>{username || "User"}</Text>
@@ -155,7 +155,7 @@ const Sidebar = ({ isVisible, onClose }) => {
               onPress={() => handleMenuClick("/(tabs)/dispatch-management/page")}
             >
               <View style={[styles.menuTextContainer, activeMenu === "/(tabs)/dispatch-management/page" && styles.activeMenuTextContainer]}>
-                <Icon
+                <Ionicons
                   name="navigate"
                   size={20}
                   color={activeMenu === "/(tabs)/dispatch-management/page" ? "#3b82f6" : "#333"}
@@ -181,7 +181,7 @@ const Sidebar = ({ isVisible, onClose }) => {
               onPress={() => handleMenuClick("/(tabs)/overspeeding-history/page")}
             >
               <View style={[styles.menuTextContainer, activeMenu === "/(tabs)/overspeeding-history/page" && styles.activeMenuTextContainer]}>
-                <Icon
+                <Ionicons
                   name="speedometer"
                   size={20}
                   color={activeMenu === "/(tabs)/overspeeding-history/page" ? "#3b82f6" : "#333"}
@@ -207,7 +207,7 @@ const Sidebar = ({ isVisible, onClose }) => {
               onPress={() => handleMenuClick("/(tabs)/interval-settings/page")}
             >
               <View style={[styles.menuTextContainer, activeMenu === "/(tabs)/interval-settings/page" && styles.activeMenuTextContainer]}>
-                <Icon
+                <Ionicons
                   name="settings"
                   size={20}
                   color={activeMenu === "/(tabs)/interval-settings/page" ? "#3b82f6" : "#333"}
@@ -233,7 +233,7 @@ const Sidebar = ({ isVisible, onClose }) => {
               onPress={() => handleMenuClick("/(tabs)/account-settings/page")}
             >
               <View style={[styles.menuTextContainer, activeMenu === "/(tabs)/account-settings/page" && styles.activeMenuTextContainer]}>
-                <Icon
+                <Ionicons
                   name="person"
                   size={20}
                   color={activeMenu === "/(tabs)/account-settings/page" ? "#3b82f6" : "#333"}
@@ -256,7 +256,7 @@ const Sidebar = ({ isVisible, onClose }) => {
           <View style={styles.logoutContainer}>
             <TouchableOpacity style={styles.menuItem} onPress={handleLogout}>
               <View style={styles.menuTextContainer}>
-                <Icon
+                <Ionicons
                   name="log-out-outline"
                   size={20}
                   color="#333"

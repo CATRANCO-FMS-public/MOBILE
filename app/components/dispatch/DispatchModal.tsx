@@ -2,7 +2,7 @@ import React, { useState } from "react";
 
 import { View, Text, TouchableOpacity, Modal, StyleSheet, ToastAndroid, ActivityIndicator } from "react-native";
 
-import Icon from "react-native-vector-icons/Ionicons";
+import { Ionicons } from "@expo/vector-icons";
 
 import { startDispatch, endAlley } from "@/services/dispatch/dispatchServices"; 
 
@@ -89,7 +89,7 @@ const DispatchModal: React.FC<DispatchModalProps> = ({
           {/* Icon, Dynamic Bus Title, and Status */}
           <View style={styles.header_wrapper}>
             <View style={styles.header}>
-              <Icon name="bus" size={50} color="black" />
+              <Ionicons name="bus" size={50} color="black" />
               <View style={styles.titleWrapper}>
                 <Text style={styles.busTitle}>
                   {selectedBus?.vehicle_id || "No Bus Selected"} {/* Display selected bus */}

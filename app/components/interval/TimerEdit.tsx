@@ -13,6 +13,14 @@ import {
 
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 
+interface Interval {
+  id: string;
+  name: string;
+  startTime: string;
+  endTime: string;
+  timerLimit: number;
+}
+
 interface TimerEditProps {
   visible: boolean;
   interval: Interval;

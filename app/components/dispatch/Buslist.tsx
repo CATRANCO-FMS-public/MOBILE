@@ -2,7 +2,7 @@ import React, { useState, useEffect, useImperativeHandle, forwardRef } from "rea
 
 import { FlatList, View, Text, TouchableOpacity, StyleSheet, Modal, ToastAndroid} from "react-native";
 
-import Icon from "react-native-vector-icons/Ionicons";
+import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { getVehicleAssignments } from "@/services/vehicle/vehicleServices";
@@ -43,7 +43,7 @@ const BusList = forwardRef(({ selectedBus, setSelectedBus, filter }: BusListProp
       // Filter out dispatches with 'alley_completed' status
       const filteredDispatches = allDispatches.filter((dispatch) => dispatch.status !== 'alley_completed');
 
-      const transformedData = vehicleAssignmentsResponse.map((assignment) => {
+      const transformedData = vehicleAssignmentsResponse.map((assignment: any) => {
         const dispatch = filteredDispatches.find(
           (dispatch) => dispatch.vehicle_assignment_id === assignment.vehicle_assignment_id
         );
@@ -69,7 +69,7 @@ const BusList = forwardRef(({ selectedBus, setSelectedBus, filter }: BusListProp
       });
 
       // Sort by vehicle_id
-      const sortedData = transformedData.sort((a, b) => a.vehicle_id.localeCompare(b.vehicle_id));
+      const sortedData = transformedData.sort((a: any, b: any) => a.vehicle_id.localeCompare(b.vehicle_id));
 
       setBusData(sortedData);
 
@@ -166,7 +166,7 @@ const BusList = forwardRef(({ selectedBus, setSelectedBus, filter }: BusListProp
               }
               onLongPress={() => handleLongPress(item.dispatch_logs_id)}
             >
-              <Icon name="bus" size={20} color="black" />
+              <Ionicons name="bus" size={20} color="black" />
               <View style={{ flex: 1, flexDirection: "column" }}>
                 <Text style={styles.busText}>{item.vehicle_id}</Text>
                 <Text style={styles.statusRouteText}>{`${item.route}\n| ${item.status}`} |</Text>

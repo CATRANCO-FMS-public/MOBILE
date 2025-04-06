@@ -17,9 +17,13 @@ import {
 
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import { Ionicons } from "react-native-vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 
 import { AuthContext } from "@/services/authentication/authContext";
+
+interface AuthContextType {
+  signIn: (username: string, password: string) => Promise<any>;
+}
 
 const { width, height } = Dimensions.get("window");
 
@@ -28,7 +32,7 @@ const LoginScreen = () => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const { signIn } = useContext(AuthContext);
+  const { signIn } = useContext(AuthContext as React.Context<AuthContextType>);
   const router = useRouter();
 
   // Handle login form submission
@@ -220,6 +224,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#3b82f6",
     fontWeight: "bold",
+  },
+  eyeIconWrapper: {
+    padding: 5,
+    position: 'absolute',
+    right: 10,
   },
 });
 

@@ -6,8 +6,13 @@ import { useRouter } from "expo-router";
 
 import { AuthContext } from "@/services/authentication/authContext";
 
+interface AuthContextType {
+  user: any;
+  loading: boolean;
+}
+
 export default function SplashScreen() {
-  const { user, loading } = useContext(AuthContext);
+  const { user, loading } = useContext(AuthContext as React.Context<AuthContextType>);
   const router = useRouter();
 
   useEffect(() => {

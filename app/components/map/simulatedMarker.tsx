@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 
 import { Marker, Polyline } from "react-native-maps";
 
-const SimulatedMarker = ({ title, description, initialIcon, movingIcon, routeData }) => {
+const SimulatedMarker = ({ title, description, initialIcon, movingIcon, routeData }: { title: string; description: string; initialIcon: any; movingIcon: any; routeData: any }) => {
   const [markerPosition, setMarkerPosition] = useState(routeData[0]);
   const [polylineCoordinates, setPolylineCoordinates] = useState([routeData[0]]);
   const [currentIndex, setCurrentIndex] = useState(0);
