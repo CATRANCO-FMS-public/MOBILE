@@ -7,6 +7,7 @@ import { useFocusEffect } from "expo-router";
 import { Audio } from "expo-av";
 import * as Notifications from 'expo-notifications';
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { ToastAndroid } from "react-native";
 
 import { getAllTimers } from "@/services/timer/timersServices";
 
@@ -63,15 +64,18 @@ const Timer = forwardRef((props, ref) => {
       }
   
       const { sound: newSound } = await Audio.Sound.createAsync(
-        require("./../../assets/sound/timer_alarm.mp3") // Replace with your sound file path
+        require("@/assets/sound/timer_alarm.mp3"), // Update the path to use @/ alias
+        { 
+          shouldPlay: true,
+          isLooping: true 
+        }
       );
       setSound(newSound);
-      await newSound.playAsync();
-      await newSound.setIsLoopingAsync(true);
       setIsModalVisible(true); // Show the modal when the sound is playing
       sendNotification();
     } catch (error) {
       console.error("Error playing sound:", error);
+      ToastAndroid.show("Failed to play sound notification", ToastAndroid.SHORT);
     }
   };
 

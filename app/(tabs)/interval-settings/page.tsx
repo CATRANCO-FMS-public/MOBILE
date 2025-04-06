@@ -159,13 +159,15 @@ const ClockSetting: React.FC = () => {
           end_time: sanitizedInterval.end_time,
           minutes_interval: sanitizedInterval.timerLimit,
         });
+        ToastAndroid.show("Interval updated successfully!", ToastAndroid.SHORT);
       } else {
-        const response = await createTimer({
+        await createTimer({
           title: sanitizedInterval.name,
           start_time: sanitizedInterval.start_time,
           end_time: sanitizedInterval.end_time,
           minutes_interval: sanitizedInterval.timerLimit,
         });
+        ToastAndroid.show("New interval created successfully!", ToastAndroid.SHORT);
       }
       
       fetchIntervalsFromAPI();
@@ -190,12 +192,14 @@ const ClockSetting: React.FC = () => {
               
               // Filter out the deleted interval from the state
               const updatedIntervals = intervals.filter((interval) => interval.id !== id);
-              setIntervals(updatedIntervals); // Update the state with the filtered intervals
+              setIntervals(updatedIntervals);
 
               // Save the updated intervals list back to AsyncStorage
               await AsyncStorage.setItem("intervals", JSON.stringify(updatedIntervals));
+              
+              ToastAndroid.show("Interval deleted successfully!", ToastAndroid.SHORT);
             } catch (error) {
-              Alert.alert("Error", "Failed to delete the interval. Please try again.");
+              ToastAndroid.show("Failed to delete the interval. Please try again.", ToastAndroid.BOTTOM);
             }
           },
         },
