@@ -13,7 +13,7 @@ import {
   ActivityIndicator
 } from "react-native";
 
-import Icon from "react-native-vector-icons/Ionicons";
+import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import renderImage from "@/constants/renderImage/renderImage";
@@ -126,12 +126,10 @@ const accountSettings = () => {
 
   
   const handleDone = async () => {
-
     setLoading(true);
     try {
-      const updateData = {};
+      const updateData: UpdateData = {};
 
-      // Check if password and rePassword are provided and match
       if (password && rePassword) {
         if (password !== rePassword) {
           ToastAndroid.show("Passwords do not match.", ToastAndroid.BOTTOM);
@@ -203,7 +201,7 @@ const accountSettings = () => {
           }}
         />
           <TouchableOpacity style={styles.editIcon} onPress={handleImagePicker}>
-            <Icon name="camera" size={20} color="white" />
+            <Ionicons name="camera" size={20} color="white" />
           </TouchableOpacity>
         </View>
 
@@ -248,7 +246,7 @@ const accountSettings = () => {
 
       {/* Sidebar toggle button */}
       <TouchableOpacity onPress={toggleSidebar} style={styles.menuButton}>
-        <Icon name="menu" size={25} color="black" />
+        <Ionicons name="menu" size={25} color="black" />
       </TouchableOpacity>
 
       {/* Password Change Modal */}

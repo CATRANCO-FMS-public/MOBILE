@@ -71,11 +71,8 @@
         "origin": false
       },
       "eas": {
-        "projectId": "24bf3270-e8a1-424e-a97f-0e95568b0efd"
+        "projectId": "b3860b2d-8cff-4a89-af19-34e9e7c0c422"
       }
-    },
-    "ios": {
-      "bundleIdentifier": "com.khenpaler.TransitTrackapp"
     }
   }
 }

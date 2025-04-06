@@ -12,12 +12,17 @@ import {
 
 import { Table, Row } from "react-native-reanimated-table";
 import { useRouter } from "expo-router";
-import Icon from "react-native-vector-icons/Ionicons";
+import { Ionicons } from "@expo/vector-icons";
 import { Calendar } from "react-native-calendars";
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
 
 import { getAllDispatches, deleteDispatchRecord, deleteDispatchLogsByDate } from "@/services/dispatch/dispatchServices";
+
+interface UserProfile {
+  position: string;
+  last_name: string;
+}
 
 const History = () => {
   const [dispatchData, setDispatchData] = useState([]);
@@ -35,12 +40,12 @@ const History = () => {
     const fetchData = async () => {
       try {
         const data = await getAllDispatches();
-        const transformedData = data.map((log) => {
+        const transformedData = data.map((log: any) => {
           const driver = log.vehicle_assignments.user_profiles.find(
-            (profile) => profile.position === "driver"
+            (profile: UserProfile) => profile.position === "driver"
           );
           const pao = log.vehicle_assignments.user_profiles.find(
-            (profile) => profile.position === "passenger_assistant_officer"
+            (profile: UserProfile) => profile.position === "passenger_assistant_officer"
           );
           return {
             id: log.dispatch_logs_id,
@@ -75,7 +80,7 @@ const History = () => {
     }
   }, []);
 
-  const handleDateSelect = (day) => {
+  const handleDateSelect = (day: any) => {
     setSelectedDate(day.dateString);
   
     // Filter based on start_time instead of created_at
@@ -100,7 +105,7 @@ const History = () => {
     "PAO",
   ];
 
-  const sharePDF = async (uri) => {
+  const sharePDF = async (uri: string) => {
     if (await Sharing.isAvailableAsync()) {
       await Sharing.shareAsync(uri);
     } else {
@@ -200,7 +205,7 @@ const History = () => {
     router.back();
   };
 
-  const handleLongPress = async (id) => {
+  const handleLongPress = async (id: number) => {
       try {
         // Set the selected row for highlighting
         setSelectedRow(id);
@@ -290,20 +295,20 @@ const History = () => {
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity style={styles.iconButton} onPress={goBack}>
-          <Icon name="caret-back-outline" size={28} color="#333" />
+          <Ionicons name="caret-back-outline" size={28} color="#333" />
         </TouchableOpacity>
 
         <Text style={styles.title}>Dispatch History</Text>
 
         <TouchableOpacity style={styles.iconButton} onPress={handlePrint}>
-          <Icon name="print" size={28} color="#333" />
+          <Ionicons name="print" size={28} color="#333" />
         </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.iconButton}
           onPress={() => setShowCalendar(!showCalendar)}
         >
-          <Icon name="calendar" size={28} color="#333" />
+          <Ionicons name="calendar" size={28} color="#333" />
         </TouchableOpacity>
       </View>
 
@@ -323,18 +328,18 @@ const History = () => {
             <ScrollView style={styles.dataWrapper}>
               <Table borderStyle={styles.tableBorder}>
                 {filteredDispatchData.map((rowData, index) => (
-                  <Row
-                    key={index}
-                    data={Object.values(rowData).filter((value, idx) => idx !== 0)} // Filter out the `id` column (index 0)
-                    widthArr={widthArr}
-                    style={[
-                      styles.row,
-                      index % 2 === 0 ? styles.rowEven : styles.rowOdd,
-                      rowData.id === selectedRow ? styles.highlightedRow : null,
-                    ]}
-                    textStyle={styles.rowText}
-                    onLongPress={() => handleLongPress(rowData.id)}
-                  />
+                  <TouchableOpacity key={index} onLongPress={() => handleLongPress(rowData.id)}>
+                    <Row
+                      data={Object.values(rowData).filter((value, idx) => idx !== 0)}
+                      widthArr={widthArr}
+                      style={[
+                        styles.row,
+                        index % 2 === 0 ? styles.rowEven : styles.rowOdd,
+                        rowData.id === selectedRow ? styles.highlightedRow : null,
+                      ]}
+                      textStyle={styles.rowText}
+                    />
+                  </TouchableOpacity>
                 ))}
               </Table>
             </ScrollView>
@@ -361,7 +366,7 @@ const History = () => {
               style={styles.deleteButtonInsideModal}
               onPress={handleDeleteByDate}
             >
-              <Icon name="trash" size={24} color="#fff" />
+              <Ionicons name="trash" size={24} color="#fff" />
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.closeButton}

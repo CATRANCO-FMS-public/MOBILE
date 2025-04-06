@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+
 import {
   View,
   Text,
@@ -8,12 +9,15 @@ import {
   Alert,
   Modal,
 } from "react-native";
+
 import { Table, Row } from "react-native-reanimated-table";
-import Sidebar from "../../components/layout/Sidebar";
-import Icon from "react-native-vector-icons/Ionicons";
 import { Calendar } from "react-native-calendars";
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
+import { Ionicons } from "@expo/vector-icons";
+
+import Sidebar from "../../components/layout/Sidebar";
+
 import { getAllOverspeedRecords } from "@/services/overspeedTracking/overspeedServices";
 import { deleteOverspeedRecord, deleteOverspeedRecordsByDate } from "@/services/overspeedTracking/overspeedServices";
 
@@ -52,9 +56,9 @@ const OverspeedHistory = () => {
       }
     }, []);
 
-  const handleDateSelect = (day) => {
+  const handleDateSelect = (day: any) => {
     setSelectedDate(day.dateString);
-    const filteredData = overspeedData.filter((record) =>
+    const filteredData = overspeedData.filter((record: any) =>
       record.overspeed_timestamp.startsWith(day.dateString)
     );
     setFilteredOverspeedData(filteredData);
@@ -136,7 +140,7 @@ const OverspeedHistory = () => {
     }
   };
 
-  const handleLongPress = async (id) => {
+  const handleLongPress = async (id: any) => {
     try {
       // Set the selected row for highlighting
       setSelectedRow(id);
@@ -232,20 +236,20 @@ const OverspeedHistory = () => {
                 onPress={() => setSidebarVisible(!sidebarVisible)}
                 style={styles.iconButton}
         >
-        <Icon name="menu" size={25} color="black" />
+        <Ionicons name="menu" size={25} color="black" />
         </TouchableOpacity>
         
         <Text style={styles.title}>Overspeed History</Text>
 
         <TouchableOpacity style={styles.iconButton} onPress={handlePrint}>
-          <Icon name="print" size={28} color="#333" />
+          <Ionicons name="print" size={28} color="#333" />
         </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.iconButton}
           onPress={() => setShowCalendar(!showCalendar)}
         >
-          <Icon name="calendar" size={28} color="#333" />
+          <Ionicons name="calendar" size={28} color="#333" />
         </TouchableOpacity>
       </View>
 
@@ -265,24 +269,24 @@ const OverspeedHistory = () => {
             <ScrollView style={styles.dataWrapper}>
               <Table borderStyle={styles.tableBorder}>
                 {filteredOverspeedData.map((rowData, index) => (
-                  <Row
-                    key={index}
-                    data={[
-                      rowData.overspeed_timestamp,
-                      rowData.vehicle_id,
-                      rowData.speed,
-                      rowData.latitude,
-                      rowData.longitude,
-                    ]}
-                    widthArr={widthArr}
-                    style={[
-                      styles.row,
-                      index % 2 === 0 ? styles.rowEven : styles.rowOdd,
-                      rowData.id === selectedRow ? styles.highlightedRow : null,
-                    ]}
-                    textStyle={styles.rowText}
-                    onLongPress={() => handleLongPress(rowData.id)}
-                  />
+                  <TouchableOpacity key={index} onLongPress={() => handleLongPress(rowData.id)}>
+                    <Row
+                      data={[
+                        rowData.overspeed_timestamp,
+                        rowData.vehicle_id,
+                        rowData.speed,
+                        rowData.latitude,
+                        rowData.longitude,
+                      ]}
+                      widthArr={widthArr}
+                      style={[
+                        styles.row,
+                        index % 2 === 0 ? styles.rowEven : styles.rowOdd,
+                        rowData.id === selectedRow ? styles.highlightedRow : null,
+                      ]}
+                      textStyle={styles.rowText}
+                    />
+                  </TouchableOpacity>
                 ))}
               </Table>
             </ScrollView>
@@ -309,7 +313,7 @@ const OverspeedHistory = () => {
               style={styles.deleteButtonInsideModal}
               onPress={handleDeleteByDate}
             >
-              <Icon name="trash" size={24} color="#fff" />
+              <Ionicons name="trash" size={24} color="#fff" />
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.closeButton}

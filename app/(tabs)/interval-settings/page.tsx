@@ -11,7 +11,7 @@ import {
   ActivityIndicator
 } from "react-native";
 
-import Icon from "react-native-vector-icons/Ionicons";
+import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import Sidebar from "../../components/layout/Sidebar";
@@ -259,7 +259,7 @@ const ClockSetting: React.FC = () => {
         onPress={() => setSidebarVisible(!sidebarVisible)}
         style={styles.menuButton}
       >
-        <Icon name="menu" size={25} color="black" />
+        <Ionicons name="menu" size={25} color="black" />
       </TouchableOpacity>
 
       <TimerEdit

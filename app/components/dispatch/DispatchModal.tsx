@@ -11,6 +11,11 @@ interface DispatchModalProps {
   onClose: () => void;
   selectedBus: { vehicle_id: string; status: string; vehicle_assignment_id: number; dispatch_logs_id?: number } | null;
   onConfirm: () => void;
+  timerRef: React.RefObject<{
+    startTimer: () => void;
+    stopTimer: () => void;
+    isRunning: () => boolean;
+  }>;
 }
 
 const DispatchModal: React.FC<DispatchModalProps> = ({

@@ -7,12 +7,13 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   ToastAndroid,
-  Image
+  Image,
+  ImageSourcePropType
 } from "react-native";
 
 import { useRouter } from "expo-router";
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE  } from "react-native-maps";
-import Icon from "react-native-vector-icons/Ionicons";
+import { Ionicons } from "@expo/vector-icons";
 import RNPickerSelect from 'react-native-picker-select';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from "expo-router";
@@ -34,15 +35,24 @@ import { createOverspeedRecord } from "@/services/overspeedTracking/overspeedSer
 // import { routeData } from "../../components/data/routeData";
 // import { resetBlockedLocationsForAllVehicles } from "@/services/resetBlockedLocations/resetBlockedLocationsServices";
 
+interface PathsType {
+  [key: string]: Array<{latitude: number; longitude: number}>;
+}
+
 const App = () => {
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const [currentDate, setCurrentDate] = useState("");
   const [dispatchModalVisible, setDispatchModalVisible] = useState(false);
   const [alleyModalVisible, setAlleyModalVisible] = useState(false);
-  const [selectedBus, setSelectedBus] = useState<{ vehicle_id: string; status: string } | null>(null);
+  const [selectedBus, setSelectedBus] = useState<{ 
+    vehicle_id: string; 
+    status: string; 
+    vehicle_assignment_id: number;
+    dispatch_logs_id: number;
+  } | null>(null);
   const [isHidden, setIsHidden] = useState(false); // To toggle visibility of components
   const [trackersData, setTrackersData] = useState([]);
-  const [paths, setPaths] = useState({});
+  const [paths, setPaths] = useState<PathsType>({});
   const [busIcons, setBusIcons] = useState<{ [tracker_ident: string]: any }>({
     "default": Image.resolveAssetSource(require("../../../assets/images/bus_idle.png")),
   });
@@ -241,7 +251,7 @@ const App = () => {
 
               // Update bus icon based on dispatch_log status
               if (dispatch_log) {
-                let iconPath;
+                let iconPath: ImageSourcePropType;
 
                 // Determine the icon path based on dispatch_log status
                 if (dispatch_log.status === "on road") {
@@ -528,16 +538,16 @@ const App = () => {
         {!isHidden && ( // Conditionally render the menu icon and date
           <>
             <TouchableOpacity onPress={() => setSidebarVisible(!sidebarVisible)}>
-              <Icon name="menu" size={25} color="black" />
+              <Ionicons name="menu" size={25} color="black" />
             </TouchableOpacity>
             <Text style={styles.date}>{currentDate}</Text>
             <TouchableOpacity style={styles.histogramIcon} onPress={() => {router.push("/(tabs)/dispatch-management/history/page")}}>
-              <Icon name="bar-chart-outline" size={25} color="black" />
+              <Ionicons name="bar-chart-outline" size={25} color="black" />
             </TouchableOpacity>
           </>
         )}
         <TouchableOpacity onPress={toggleVisibility} style={styles.eyeIcon}>
-          <Icon name={isHidden ? "eye-outline" : "eye-off-outline"} size={25} color="black" />
+          <Ionicons name={isHidden ? "eye-outline" : "eye-off-outline"} size={25} color="black" />
         </TouchableOpacity>
       </View>
 
@@ -561,8 +571,7 @@ const App = () => {
               ref={busListRef}
               selectedBus={selectedBus}
               setSelectedBus={setSelectedBus}
-              filter={filter} // Pass filter state to BusList
-              setFilter={setFilter} // Pass setFilter function to BusList if needed
+              filter={filter}
             />
           </View>
 
